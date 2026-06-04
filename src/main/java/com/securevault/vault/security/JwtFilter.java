@@ -1,36 +1,66 @@
 package com.securevault.vault.security;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
-import java.io.IOException;
+import com.securevault.vault.security.JwtUtil;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.filter.OncePerRequestFilter;
 
-public class JwtFilter implements Filter {
+import java.io.IOException;
+import java.util.Collections;
+
+public class JwtFilter extends OncePerRequestFilter {
 
     @Override
-    public void doFilter(ServletRequest request,
-                         ServletResponse response,
-                         FilterChain chain)
-            throws IOException, ServletException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
 
-        HttpServletRequest req = (HttpServletRequest) request;
-        HttpServletResponse res = (HttpServletResponse) response;
+        String path = request.getRequestURI();
 
-        String authHeader = req.getHeader("Authorization");
+        // ✅ STEP 1: Skip auth endpoints
+        if (path.startsWith("/api/auth")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // ✅ STEP 2: Get Authorization header
+        String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            res.getWriter().write("Missing or invalid token");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Missing or Invalid Token");
             return;
         }
 
+        // ✅ STEP 3: Extract token
         String token = authHeader.substring(7);
 
+        // ✅ STEP 4: Validate token
         if (!JwtUtil.validateToken(token)) {
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            res.getWriter().write("Invalid token");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Invalid Token");
             return;
         }
 
-        chain.doFilter(request, response);
+        // ✅ STEP 5: Extract username from token
+        String username = JwtUtil.extractUsername(token);
+
+        // ✅ STEP 6: Set authentication in Spring Security context
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(
+                        username,
+                        null,
+                        Collections.emptyList()
+                );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // ✅ STEP 7: Continue request
+        filterChain.doFilter(request, response);
     }
 }
