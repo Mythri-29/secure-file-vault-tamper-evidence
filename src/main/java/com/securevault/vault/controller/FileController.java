@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.List;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/files")
@@ -74,6 +75,7 @@ public class FileController {
         return "File uploaded successfully! SHA-256: " + hashString;
     }
 
+
     @GetMapping("/verify/{id}")
     public String verifyFile(@PathVariable Long id) throws Exception {
 
@@ -98,5 +100,22 @@ public class FileController {
         } else {
             return "WARNING: File has been tampered with!";
         }
+
+
+    }
+    @GetMapping("/download/{id}")
+    public ResponseEntity<byte[]> downloadFile(@PathVariable Long id) throws Exception {
+
+        FileEntity fileEntity = fileRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        File file = new File(fileEntity.getFilePath());
+
+        byte[] fileContent = Files.readAllBytes(file.toPath());
+
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=" + fileEntity.getFileName())
+                .header("Content-Type", fileEntity.getFileType())
+                .body(fileContent);
     }
 }
