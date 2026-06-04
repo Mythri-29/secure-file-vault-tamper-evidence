@@ -147,4 +147,13 @@ public class FileController {
         auditLogRepository.save(new AuditLog(999L, "TEST"));
         return "Audit test inserted";
     }
+    @GetMapping("/audit/{fileId}")
+    public List<String> getAuditLogs(@PathVariable Long fileId) {
+
+        return auditLogRepository.findAll()
+                .stream()
+                .filter(log -> log.getFileId().equals(fileId))
+                .map(AuditLog::getAction)
+                .toList();
+    }
 }

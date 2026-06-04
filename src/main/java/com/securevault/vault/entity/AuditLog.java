@@ -28,4 +28,15 @@ public class AuditLog {
     }
 
     // getters and setters
+    public Long getFileId() {
+        return fileId;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public Long getId() {
+        return id;
+    }
 }
