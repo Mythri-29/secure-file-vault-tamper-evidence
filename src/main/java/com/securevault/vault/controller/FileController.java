@@ -4,13 +4,14 @@ import com.securevault.vault.entity.AuditLog;
 import com.securevault.vault.entity.FileEntity;
 import com.securevault.vault.repository.AuditLogRepository;
 import com.securevault.vault.repository.FileRepository;
+import com.securevault.vault.service.FileService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.security.MessageDigest;
 import java.util.List;
 
 @RestController
@@ -19,11 +20,14 @@ public class FileController {
 
     private final FileRepository fileRepository;
     private final AuditLogRepository auditLogRepository;
+    private final FileService fileService;
 
     public FileController(FileRepository fileRepository,
-                          AuditLogRepository auditLogRepository) {
+                          AuditLogRepository auditLogRepository,
+                          FileService fileService) {
         this.fileRepository = fileRepository;
         this.auditLogRepository = auditLogRepository;
+        this.fileService = fileService;
     }
 
     // ---------------- TEST ----------------
@@ -43,47 +47,10 @@ public class FileController {
         return fileRepository.findAll();
     }
 
-    // ---------------- UPLOAD ----------------
+    // ---------------- UPLOAD (FIXED) ----------------
     @PostMapping("/upload")
     public String uploadFile(@RequestParam("file") MultipartFile file) throws Exception {
-
-        String uploadDir = System.getProperty("user.dir") + "/uploads/";
-
-        File dir = new File(uploadDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-
-        String filePath = uploadDir + file.getOriginalFilename();
-
-        File savedFile = new File(filePath);
-        file.transferTo(savedFile);
-
-        byte[] fileBytes = Files.readAllBytes(savedFile.toPath());
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hashBytes = digest.digest(fileBytes);
-
-        StringBuilder hashString = new StringBuilder();
-        for (byte b : hashBytes) {
-            hashString.append(String.format("%02x", b));
-        }
-
-        FileEntity fileEntity = new FileEntity();
-        fileEntity.setFileName(file.getOriginalFilename());
-        fileEntity.setFileType(file.getContentType());
-        fileEntity.setFilePath(filePath);
-        fileEntity.setFileHash(hashString.toString());
-
-        // SAVE FILE FIRST (IMPORTANT)
-        fileRepository.save(fileEntity);
-
-        // THEN LOG
-        auditLogRepository.save(
-                new AuditLog(fileEntity.getId(), "UPLOAD")
-        );
-
-        return "File uploaded successfully! SHA-256: " + hashString;
+        return fileService.uploadFile(file);
     }
 
     // ---------------- VERIFY ----------------
@@ -97,7 +64,7 @@ public class FileController {
 
         byte[] fileBytes = Files.readAllBytes(file.toPath());
 
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
         byte[] hashBytes = digest.digest(fileBytes);
 
         StringBuilder currentHash = new StringBuilder();
@@ -105,10 +72,7 @@ public class FileController {
             currentHash.append(String.format("%02x", b));
         }
 
-        // LOG FIRST (important)
-        auditLogRepository.save(
-                new AuditLog(id, "VERIFY")
-        );
+        auditLogRepository.save(new AuditLog(id, "VERIFY"));
 
         if (currentHash.toString().equals(fileEntity.getFileHash())) {
             return "File is authentic. No tampering detected.";
@@ -128,10 +92,7 @@ public class FileController {
 
         byte[] fileContent = Files.readAllBytes(file.toPath());
 
-        // LOG AFTER FILE FETCH
-        auditLogRepository.save(
-                new AuditLog(id, "DOWNLOAD")
-        );
+        auditLogRepository.save(new AuditLog(id, "DOWNLOAD"));
 
         return ResponseEntity.ok()
                 .header("Content-Disposition",
@@ -141,12 +102,14 @@ public class FileController {
                 .body(fileContent);
     }
 
-    // ---------------- DEBUG ENDPOINT ----------------
+    // ---------------- AUDIT TEST ----------------
     @GetMapping("/audit-test")
     public String auditTest() {
         auditLogRepository.save(new AuditLog(999L, "TEST"));
         return "Audit test inserted";
     }
+
+    // ---------------- AUDIT LOGS ----------------
     @GetMapping("/audit/{fileId}")
     public List<String> getAuditLogs(@PathVariable Long fileId) {
 
