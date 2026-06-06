@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Upload File - Secure Vault</title>
+
+    <style>
+
+        body{
+            margin:0;
+            font-family:Arial, sans-serif;
+            background:#0f172a;
+            color:white;
+        }
+
+        .navbar{
+            background:#1e293b;
+            padding:20px;
+            font-size:24px;
+            font-weight:bold;
+            text-align:center;
+        }
+
+        .container{
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:80vh;
+        }
+
+        .card{
+            background:#1e293b;
+            padding:40px;
+            border-radius:15px;
+            width:450px;
+            text-align:center;
+        }
+
+        input{
+            margin-top:20px;
+            width:100%;
+            padding:10px;
+        }
+
+        button{
+            margin-top:20px;
+            padding:12px 20px;
+            background:#3b82f6;
+            color:white;
+            border:none;
+            border-radius:5px;
+            cursor:pointer;
+        }
+
+        button:hover{
+            background:#2563eb;
+        }
+
+        .back-btn{
+            background:#475569;
+            margin-right:10px;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">
+    Secure Vault - Upload Files
+</div>
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>Upload File</h2>
+
+        <input type="file" id="fileInput">
+
+        <br>
+
+        <button class="back-btn" onclick="goBack()">
+            Back
+        </button>
+
+        <button onclick="uploadFile()">
+            Upload
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+    function getToken() {
+        return localStorage.getItem("token");
+    }
+
+    function goBack() {
+        window.location.href = "dashboard.html";
+    }
+
+    async function uploadFile() {
+
+        const file = document.getElementById("fileInput").files[0];
+
+        if(!file){
+            alert("Please select a file");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch(
+            "http://localhost:8080/files/upload",
+            {
+                method:"POST",
+                headers:{
+                    "Authorization":"Bearer " + getToken()
+                },
+                body:formData
+            }
+        );
+
+        const result = await response.text();
+
+        alert(result);
+    }
+
+</script>
+
+</body>
+</html>

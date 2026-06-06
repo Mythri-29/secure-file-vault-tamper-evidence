@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Secure Vault Login</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .box {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 8px 0;
+        }
+
+        button {
+            padding: 10px;
+            width: 100%;
+            background: #3b82f6;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        p {
+            margin-top: 10px;
+            color: #f87171;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="box">
+    <h2>Secure Vault Login</h2>
+
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+
+    <p id="msg"></p>
+</div>
+
+<script>
+
+    async function login() {
+
+        const response = await fetch("http://localhost:8080/api/auth/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value
+            })
+        });
+
+        const data = await response.text();
+
+        // 🔥 FIX: remove quotes + spaces
+        const token = data.replace(/"/g, "").trim();
+
+        if (token && token.startsWith("eyJ")) {
+            localStorage.setItem("token", token);
+            document.getElementById("msg").style.color = "#4ade80";
+            document.getElementById("msg").innerText = "Login successful! Redirecting...";
+
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 800);
+
+        } else {
+            document.getElementById("msg").innerText = data;
+        }
+    }
+
+</script>
+
+</body>
+</html>

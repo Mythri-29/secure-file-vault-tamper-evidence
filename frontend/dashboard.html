@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Secure Vault Dashboard</title>
+
+    <style>
+
+        body{
+            margin:0;
+            font-family:Arial, sans-serif;
+            background:#0f172a;
+            color:white;
+        }
+
+        .navbar{
+            background:#1e293b;
+            padding:20px;
+            font-size:24px;
+            font-weight:bold;
+            text-align:center;
+        }
+
+        .container{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:25px;
+            padding:40px;
+            max-width:1000px;
+            margin:auto;
+        }
+
+        .card{
+            background:#1e293b;
+            border-radius:15px;
+            padding:50px;
+            text-align:center;
+            cursor:pointer;
+            transition:0.3s;
+            border:2px solid transparent;
+        }
+
+        .card:hover{
+            transform:translateY(-5px);
+            border-color:#3b82f6;
+            background:#243447;
+        }
+
+        .icon{
+            font-size:50px;
+            margin-bottom:15px;
+        }
+
+        .title{
+            font-size:24px;
+            font-weight:bold;
+        }
+
+        .subtitle{
+            margin-top:10px;
+            color:#cbd5e1;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">
+    🔐 Secure Vault
+</div>
+
+<div class="container">
+
+    <div class="card" onclick="location.href='upload.html'">
+        <div class="icon">📤</div>
+        <div class="title">Upload Files</div>
+        <div class="subtitle">Upload and secure files</div>
+    </div>
+
+    <div class="card" onclick="location.href='files.html'">
+        <div class="icon">📁</div>
+        <div class="title">My Files</div>
+        <div class="subtitle">View stored files</div>
+    </div>
+
+    <div class="card" onclick="location.href='audit.html'">
+        <div class="icon">📋</div>
+        <div class="title">Audit Logs</div>
+        <div class="subtitle">Track all activities</div>
+    </div>
+
+    <div class="card" onclick="location.href='profile.html'">
+        <div class="icon">👤</div>
+        <div class="title">Profile</div>
+        <div class="subtitle">User information</div>
+    </div>
+
+</div>
+
+</body>
+</html>
