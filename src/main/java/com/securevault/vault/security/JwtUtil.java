@@ -3,26 +3,29 @@ package com.securevault.vault.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
 public class JwtUtil {
 
-    private static final Key key =
-            Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    // 🔥 FIXED SECRET KEY (MUST STAY CONSTANT)
+    private static final String SECRET =
+            "mysecurevaultsecretkeymysecurevaultsecretkey123456";
 
-    // Generate Token
+    private static final Key key =
+            Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+
     public static String generateToken(String username) {
 
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 1 day
+                .setExpiration(new Date(System.currentTimeMillis() + 86400000))
                 .signWith(key)
                 .compact();
     }
 
-    // Extract username
     public static String extractUsername(String token) {
 
         return Jwts.parserBuilder()
@@ -33,7 +36,6 @@ public class JwtUtil {
                 .getSubject();
     }
 
-    // Validate token
     public static boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()

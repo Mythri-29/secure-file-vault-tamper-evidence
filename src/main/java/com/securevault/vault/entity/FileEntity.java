@@ -10,13 +10,18 @@ public class FileEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String uploadedBy;
 
+    private LocalDateTime uploadTime;
+
+    private String fileHash;
+
+    private String status; // SAFE or TAMPERED
     private String fileName;
 
     private String fileType;
 
     private String filePath;
-    private String fileHash;
 
     private LocalDateTime uploadedAt;
 
@@ -63,7 +68,29 @@ public class FileEntity {
     public void setFileHash(String fileHash) {
         this.fileHash = fileHash;
     }
+    public String getUploadedBy() {
+        return uploadedBy;
+    }
 
+    public void setUploadedBy(String uploadedBy) {
+        this.uploadedBy = uploadedBy;
+    }
+
+    public LocalDateTime getUploadTime() {
+        return uploadTime;
+    }
+
+    public void setUploadTime(LocalDateTime uploadTime) {
+        this.uploadTime = uploadTime;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
     public void setUploadedAt(LocalDateTime uploadedAt) {
         this.uploadedAt = uploadedAt;
     }

@@ -46,12 +46,20 @@ public class FileController {
     public List<FileEntity> getAllFiles() {
         return fileRepository.findAll();
     }
+    @GetMapping("/details/{id}")
+    public ResponseEntity<FileEntity> getFileDetails(@PathVariable Long id) {
 
+        FileEntity fileEntity = fileRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        return ResponseEntity.ok(fileEntity);
+    }
     // ---------------- UPLOAD (FIXED) ----------------
     @PostMapping("/upload")
     public String uploadFile(@RequestParam("file") MultipartFile file) throws Exception {
         return fileService.uploadFile(file);
     }
+
 
     // ---------------- VERIFY ----------------
     @GetMapping("/verify/{id}")

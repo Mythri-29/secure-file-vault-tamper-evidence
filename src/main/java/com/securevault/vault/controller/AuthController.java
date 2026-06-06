@@ -3,7 +3,7 @@ package com.securevault.vault.controller;
 import com.securevault.vault.entity.User;
 import com.securevault.vault.repository.UserRepository;
 import com.securevault.vault.security.JwtUtil;
-
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -11,9 +11,29 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthController(UserRepository userRepository) {
+    public AuthController(UserRepository userRepository,
+                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    // ---------------- REGISTER ----------------
+    @PostMapping("/register")
+    public String register(@RequestBody User user) {
+
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            return "User already exists";
+        }
+
+        // IMPORTANT: encode password before saving
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole("USER");
+        userRepository.save(user);
+
+
+        return "User registered successfully";
     }
 
     // ---------------- LOGIN ----------------
@@ -27,7 +47,7 @@ public class AuthController {
             return "User not found";
         }
 
-        if (!dbUser.getPassword().equals(user.getPassword())) {
+        if (!passwordEncoder.matches(user.getPassword(), dbUser.getPassword())) {
             return "Invalid password";
         }
 

@@ -51,11 +51,19 @@ public class FileService {
         }
 
         // ---------------- SAVE FILE ENTITY ----------------
+        // ---------------- SAVE FILE ENTITY ----------------
         FileEntity fileEntity = new FileEntity();
+
         fileEntity.setFileName(file.getOriginalFilename());
         fileEntity.setFileType(file.getContentType());
         fileEntity.setFilePath(filePath);
+
         fileEntity.setFileHash(hashString.toString());
+
+// NEW METADATA
+        fileEntity.setUploadedBy("admin");
+        fileEntity.setUploadTime(java.time.LocalDateTime.now());
+        fileEntity.setStatus("SAFE");
 
         fileRepository.save(fileEntity);
 

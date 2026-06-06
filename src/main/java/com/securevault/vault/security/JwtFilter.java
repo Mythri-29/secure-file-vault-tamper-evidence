@@ -1,18 +1,28 @@
 package com.securevault.vault.security;
 
-import com.securevault.vault.security.JwtUtil;
+import com.securevault.vault.entity.User;
+import com.securevault.vault.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
+@Component
 public class JwtFilter extends OncePerRequestFilter {
+
+    private final UserRepository userRepository;
+
+    public JwtFilter(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -22,45 +32,46 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // ✅ STEP 1: Skip auth endpoints
+        // allow auth endpoints
         if (path.startsWith("/api/auth")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // ✅ STEP 2: Get Authorization header
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Missing or Invalid Token");
+            filterChain.doFilter(request, response);
             return;
         }
 
-        // ✅ STEP 3: Extract token
         String token = authHeader.substring(7);
 
-        // ✅ STEP 4: Validate token
         if (!JwtUtil.validateToken(token)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Invalid Token");
             return;
         }
 
-        // ✅ STEP 5: Extract username from token
         String username = JwtUtil.extractUsername(token);
 
-        // ✅ STEP 6: Set authentication in Spring Security context
+        User user = userRepository.findByUsername(username).orElse(null);
+
+        if (user == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("User not found");
+            return;
+        }
+
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
                         username,
                         null,
-                        Collections.emptyList()
+                        List.of(new SimpleGrantedAuthority(user.getRole()))
                 );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // ✅ STEP 7: Continue request
         filterChain.doFilter(request, response);
     }
 }
