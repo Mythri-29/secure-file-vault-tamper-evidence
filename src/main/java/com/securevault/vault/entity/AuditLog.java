@@ -17,26 +17,39 @@ public class AuditLog {
 
     private LocalDateTime timestamp;
 
-    public AuditLog() {
-        this.timestamp = LocalDateTime.now();
-    }
+    public AuditLog() {}
 
-    public AuditLog(Long fileId, String action) {
+    public AuditLog(Long fileId, String action, LocalDateTime timestamp) {
         this.fileId = fileId;
         this.action = action;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = timestamp;
     }
 
-    // getters and setters
+    public Long getId() {
+        return id;
+    }
+
     public Long getFileId() {
         return fileId;
+    }
+
+    public void setFileId(Long fileId) {
+        this.fileId = fileId;
     }
 
     public String getAction() {
         return action;
     }
 
-    public Long getId() {
-        return id;
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
     }
 }

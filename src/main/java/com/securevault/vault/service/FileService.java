@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.nio.file.Files;
 import java.security.MessageDigest;
+import java.time.LocalDateTime;
 
 @Service
 public class FileService {
@@ -24,54 +25,46 @@ public class FileService {
         this.auditLogRepository = auditLogRepository;
     }
 
-    // ---------------- UPLOAD FILE ----------------
-    public String uploadFile(MultipartFile file) throws Exception {
+    public String uploadFile(MultipartFile file, String uploadedBy) throws Exception {
 
-        String uploadDir = System.getProperty("user.dir") + "/uploads/";
+        String dirPath = System.getProperty("user.dir") + "/uploads/";
 
-        File dir = new File(uploadDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
+        File dir = new File(dirPath);
+        if(!dir.exists()) dir.mkdirs();
+
+        String filePath = dirPath + file.getOriginalFilename();
+
+        File saved = new File(filePath);
+        file.transferTo(saved);
+
+        byte[] bytes = Files.readAllBytes(saved.toPath());
+
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        byte[] hash = md.digest(bytes);
+
+        StringBuilder sb = new StringBuilder();
+        for(byte b : hash){
+            sb.append(String.format("%02x", b));
         }
 
-        String filePath = uploadDir + file.getOriginalFilename();
+        FileEntity f = new FileEntity();
+        f.setFileName(file.getOriginalFilename());
+        f.setFileType(file.getContentType());
+        f.setFilePath(filePath);
+        f.setFileHash(sb.toString());
 
-        File savedFile = new File(filePath);
-        file.transferTo(savedFile);
+        f.setUploadedBy(uploadedBy);
+        f.setUploadTime(LocalDateTime.now());
+        f.setStatus("SAFE");
 
-        // ---------------- SHA-256 HASH ----------------
-        byte[] fileBytes = Files.readAllBytes(savedFile.toPath());
+        fileRepository.save(f);
 
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hashBytes = digest.digest(fileBytes);
+        auditLogRepository.save(new AuditLog(
+                f.getId(),
+                "UPLOAD",
+                LocalDateTime.now()
+        ));
 
-        StringBuilder hashString = new StringBuilder();
-        for (byte b : hashBytes) {
-            hashString.append(String.format("%02x", b));
-        }
-
-        // ---------------- SAVE FILE ENTITY ----------------
-        // ---------------- SAVE FILE ENTITY ----------------
-        FileEntity fileEntity = new FileEntity();
-
-        fileEntity.setFileName(file.getOriginalFilename());
-        fileEntity.setFileType(file.getContentType());
-        fileEntity.setFilePath(filePath);
-
-        fileEntity.setFileHash(hashString.toString());
-
-// NEW METADATA
-        fileEntity.setUploadedBy("admin");
-        fileEntity.setUploadTime(java.time.LocalDateTime.now());
-        fileEntity.setStatus("SAFE");
-
-        fileRepository.save(fileEntity);
-
-        // ---------------- AUDIT LOG ----------------
-        auditLogRepository.save(
-                new AuditLog(fileEntity.getId(), "UPLOAD")
-        );
-
-        return "File uploaded successfully! SHA-256: " + hashString;
+        return "Uploaded successfully";
     }
 }

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>My Files - Secure Vault</title>
+
+    <style>
+
+        body{
+            margin:0;
+            font-family:Arial, sans-serif;
+            background:#0f172a;
+            color:#e2e8f0;
+        }
+
+        /* NAVBAR */
+        .navbar{
+            background:#1e293b;
+            padding:18px;
+            text-align:center;
+            font-size:20px;
+            font-weight:600;
+            letter-spacing:0.5px;
+        }
+
+        /* LAYOUT */
+        .container{
+            display:flex;
+            gap:18px;
+            padding:18px;
+            height:calc(100vh - 70px);
+            box-sizing:border-box;
+        }
+
+        /* LEFT */
+        .left{
+            width:50%;
+            background:#1e293b;
+            padding:18px;
+            border-radius:14px;
+            overflow-y:auto;
+        }
+
+        /* RIGHT */
+        .right{
+            width:50%;
+            background:#1e293b;
+            padding:18px;
+            border-radius:14px;
+        }
+
+        /* FILE ITEM */
+        .file-item{
+            background:#0f172a;
+            padding:12px 14px;
+            margin:10px 0;
+            border-radius:10px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            border:1px solid #1f2937;
+            transition:0.2s ease;
+        }
+
+        .file-item:hover{
+            border-color:#334155;
+            transform:translateY(-1px);
+        }
+
+        /* BUTTONS (IMPROVED — less dull) */
+        button{
+            padding:8px 12px;
+            background:linear-gradient(145deg,#1f2937,#111827);
+            border:1px solid #374151;
+            color:#e5e7eb;
+            border-radius:10px;
+            cursor:pointer;
+            font-size:13px;
+            transition:0.2s ease;
+        }
+
+        button:hover{
+            background:#1f2937;
+            border-color:#4b5563;
+            transform:translateY(-1px);
+        }
+
+        button:active{
+            transform:scale(0.97);
+        }
+
+        button:focus{
+            outline:none;
+            box-shadow:0 0 0 2px #3b82f6;
+        }
+
+        /* STATUS */
+        .safe{
+            color:#22c55e;
+            font-weight:600;
+        }
+
+        .tampered{
+            color:#ef4444;
+            font-weight:600;
+        }
+
+        /* EMPTY */
+        .empty{
+            color:#94a3b8;
+        }
+
+        /* TOOLBOX */
+        .tools{
+            margin-bottom:15px;
+            padding:12px;
+            background:#0f172a;
+            border-radius:10px;
+            border:1px solid #1f2937;
+        }
+
+        .tools h4{
+            margin:0 0 10px 0;
+            font-size:14px;
+            color:#cbd5e1;
+        }
+
+        .tools button{
+            width:100%;
+            margin-bottom:8px;
+        }
+
+        .btn-group{
+            display:flex;
+            gap:8px;
+            margin-top:12px;
+            flex-wrap:wrap;
+        }
+        .scan-box {
+    margin-top: 12px;
+    padding: 10px;
+    background: #0f172a;
+    border: 1px solid #1f2937;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
+.bar {
+    margin-top: 8px;
+    height: 6px;
+    width: 100%;
+    background: #1f2937;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+}
+
+.bar::after {
+    content: "";
+    position: absolute;
+    height: 100%;
+    width: 40%;
+    background: #3b82f6;
+    border-radius: 5px;
+    animation: scan 1.2s infinite;
+}
+
+@keyframes scan {
+    0% { left: -40%; }
+    100% { left: 100%; }
+}
+
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">
+    📁 Secure File Vault - My Files
+</div>
+
+<div class="container">
+
+    <!-- LEFT -->
+    <div class="left">
+        <h3>Files</h3>
+        <button onclick="loadFiles()">Load Files</button>
+        <div id="fileList"></div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+
+        <h3>File Details</h3>
+
+        <!-- TOOL SECTION (NEW) -->
+        <div class="tools">
+            <h4>🧪 Tools</h4>
+            <button onclick="simulateTamper()">Simulate Tampering (Demo)</button>
+        </div>
+
+        <div id="details" class="empty">
+            Select a file to view details
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    let currentFileId = null;
+
+    function getToken(){
+        return localStorage.getItem("token");
+    }
+
+    /* LOAD FILES */
+    async function loadFiles(){
+
+        const res = await fetch("http://localhost:8080/files",{
+            headers:{
+                "Authorization":"Bearer " + getToken()
+            }
+        });
+
+        const data = await res.json();
+
+        const list = document.getElementById("fileList");
+        list.innerHTML = "";
+
+        data.forEach(file => {
+
+            const div = document.createElement("div");
+            div.className = "file-item";
+
+            div.innerHTML = `
+                <span>${file.fileName}</span>
+               <button onclick="showDetails(${file.id})">Details</button>
+            `;
+
+            list.appendChild(div);
+        });
+    }
+
+    /* SHOW DETAILS */
+    async function showDetails(id){
+
+        currentFileId = id;
+
+        const res = await fetch(`http://localhost:8080/files/details/${id}`,{
+            headers:{
+                "Authorization":"Bearer " + getToken()
+            }
+        });
+
+        const file = await res.json();
+
+        const statusClass = file.status === "SAFE" ? "safe" : "tampered";
+
+        document.getElementById("details").innerHTML = `
+            <p><b>Name:</b> ${file.fileName}</p>
+            <p><b>Uploaded By:</b> ${file.uploadedBy || "-"}</p>
+            <p><b>Status:</b> <span class="${statusClass}">${file.status}</span></p>
+            <p><b>Hash:</b> ${file.fileHash}</p>
+
+            <div class="btn-group">
+                <button onclick="previewFile(${file.id})">Preview</button>
+                <button onclick="downloadFile(${file.id})">Download</button>
+                <button onclick="verifyFile(${file.id})">Verify</button>
+            </div>
+
+            <div id="verifyResult" style="margin-top:12px;"></div>
+        `;
+    }
+
+    /* VERIFY */
+    async function verifyFile(id){
+
+    const box = document.getElementById("verifyResult");
+
+    // STEP 1: show animation immediately
+    box.innerHTML = `
+        <div class="scan-box">
+            🔍 Scanning integrity...
+            <div class="bar"></div>
+        </div>
+    `;
+
+    // small delay to simulate real system
+    setTimeout(async () => {
+
+        const res = await fetch(`http://localhost:8080/files/verify/${id}`,{
+            headers:{
+                "Authorization":"Bearer " + getToken()
+            }
+        });
+
+        const text = await res.text();
+
+        // STEP 2: show final result
+        box.innerHTML = `
+            <div class="scan-box">
+                ${text.includes("tampered") || text.includes("TAMPERED")
+                    ? "🔴 Result: TAMPERED"
+                    : "🟢 Result: SAFE"}
+                <br><br>
+                ${text}
+            </div>
+        `;
+
+    }, 1200);
+}
+
+    /* DOWNLOAD */
+    @GetMapping("/download/{id}")
+public ResponseEntity<byte[]> download(@PathVariable Long id) throws Exception {
+
+    FileEntity f = fileRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Not found"));
+
+    File file = new File(f.getFilePath());
+
+    auditLogRepository.save(
+            new AuditLog(
+                    id,
+                    "DOWNLOAD",
+                    LocalDateTime.now()
+            )
+    );
+
+    return ResponseEntity.ok()
+            .header("Content-Disposition",
+                    "attachment; filename=\"" + f.getFileName() + "\"")
+            .header("Content-Type", f.getFileType())
+            .body(Files.readAllBytes(file.toPath()));
+}
+
+    /* PREVIEW */
+    function previewFile(id){
+
+    window.open(
+        `http://localhost:8080/files/preview/${id}`,
+        "_blank"
+    );
+}
+async function previewFile(id){
+
+    const response = await fetch(
+        `http://localhost:8080/files/preview/${id}`,
+        {
+            headers:{
+                "Authorization":"Bearer " + getToken()
+            }
+        }
+    );
+
+    const blob = await response.blob();
+
+    const url = window.URL.createObjectURL(blob);
+
+    window.open(url, "_blank");
+}
+
+    /* SIMULATE TAMPER (NEW FEATURE) */
+    async function simulateTamper(){
+
+        if(!currentFileId){
+            alert("Select a file first");
+            return;
+        }
+
+        // call verify first just to ensure file exists
+        const res = await fetch(`http://localhost:8080/files/verify/${currentFileId}`,{
+            headers:{
+                "Authorization":"Bearer " + getToken()
+            }
+        });
+
+        const text = await res.text();
+
+        // show tampered result in UI instantly
+        document.getElementById("details").innerHTML += `
+            <p style="margin-top:15px;"><b>Simulation Result:</b></p>
+            <p class="tampered">🔴 FILE TAMPERED (SIMULATION TRIGGERED)</p>
+            <p>${text}</p>
+        `;
+    }
+
+</script>
+
+</body>
+</html>

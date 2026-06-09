@@ -8,57 +8,94 @@
 
         body{
             margin:0;
-            font-family:Arial, sans-serif;
+            font-family:Arial,sans-serif;
             background:#0f172a;
             color:white;
         }
 
         .navbar{
             background:#1e293b;
-            padding:20px;
-            font-size:24px;
-            font-weight:bold;
+            padding:18px;
             text-align:center;
+            font-size:22px;
+            font-weight:bold;
         }
 
         .container{
             display:flex;
             justify-content:center;
             align-items:center;
-            height:80vh;
+            height:85vh;
         }
 
         .card{
+            width:500px;
             background:#1e293b;
-            padding:40px;
+            padding:35px;
             border-radius:15px;
-            width:450px;
-            text-align:center;
+            box-shadow:0 0 20px rgba(0,0,0,0.3);
         }
 
-        input{
-            margin-top:20px;
+        h2{
+            text-align:center;
+            margin-bottom:25px;
+        }
+
+        input[type=file]{
             width:100%;
-            padding:10px;
+            padding:12px;
+            background:#0f172a;
+            color:white;
+            border:1px solid #334155;
+            border-radius:10px;
+        }
+
+        .filename{
+            margin-top:12px;
+            color:#94a3b8;
+            font-size:14px;
+        }
+
+        .btn-group{
+            display:flex;
+            gap:10px;
+            margin-top:25px;
         }
 
         button{
-            margin-top:20px;
-            padding:12px 20px;
-            background:#3b82f6;
-            color:white;
+            flex:1;
+            padding:12px;
             border:none;
-            border-radius:5px;
+            border-radius:10px;
             cursor:pointer;
+            color:white;
+            font-weight:bold;
         }
 
-        button:hover{
+        .back{
+            background:#475569;
+        }
+
+        .upload{
             background:#2563eb;
         }
 
-        .back-btn{
-            background:#475569;
-            margin-right:10px;
+        button:hover{
+            opacity:0.9;
+        }
+
+        #result{
+            margin-top:20px;
+            text-align:center;
+            font-weight:bold;
+        }
+
+        .success{
+            color:#22c55e;
+        }
+
+        .error{
+            color:#ef4444;
         }
 
     </style>
@@ -67,26 +104,27 @@
 <body>
 
 <div class="navbar">
-    Secure Vault - Upload Files
+    📤 Secure Vault - Upload File
 </div>
 
 <div class="container">
 
     <div class="card">
 
-        <h2>Upload File</h2>
+        <h2>Select File</h2>
 
-        <input type="file" id="fileInput">
+        <input type="file" id="fileInput" onchange="showFileName()">
 
-        <br>
+        <div id="filename" class="filename">
+            No file selected
+        </div>
 
-        <button class="back-btn" onclick="goBack()">
-            Back
-        </button>
+        <div class="btn-group">
+            <button class="back" onclick="goBack()">Back</button>
+            <button class="upload" onclick="uploadFile()">Upload</button>
+        </div>
 
-        <button onclick="uploadFile()">
-            Upload
-        </button>
+        <div id="result"></div>
 
     </div>
 
@@ -94,40 +132,60 @@
 
 <script>
 
-    function getToken() {
+    function getToken(){
         return localStorage.getItem("token");
     }
 
-    function goBack() {
-        window.location.href = "dashboard.html";
+    function goBack(){
+        window.location.href="dashboard.html";
     }
 
-    async function uploadFile() {
+    function showFileName(){
 
-        const file = document.getElementById("fileInput").files[0];
+        const file=document.getElementById("fileInput").files[0];
+
+        document.getElementById("filename").innerText=
+            file ? file.name : "No file selected";
+    }
+
+    async function uploadFile(){
+
+        const file=document.getElementById("fileInput").files[0];
 
         if(!file){
-            alert("Please select a file");
+            alert("Select a file");
             return;
         }
 
-        const formData = new FormData();
-        formData.append("file", file);
+        const formData=new FormData();
 
-        const response = await fetch(
-            "http://localhost:8080/files/upload",
-            {
-                method:"POST",
-                headers:{
-                    "Authorization":"Bearer " + getToken()
-                },
-                body:formData
-            }
-        );
+        formData.append("file",file);
 
-        const result = await response.text();
+        formData.append("uploadedBy","DemoUser");
 
-        alert(result);
+        try{
+
+            const response=await fetch(
+                "http://localhost:8080/files/upload",
+                {
+                    method:"POST",
+                    headers:{
+                        "Authorization":"Bearer "+getToken()
+                    },
+                    body:formData
+                }
+            );
+
+            const result=await response.text();
+
+            document.getElementById("result").innerHTML=
+                `<span class="success">${result}</span>`;
+
+        }catch(e){
+
+            document.getElementById("result").innerHTML=
+                `<span class="error">Upload Failed</span>`;
+        }
     }
 
 </script>

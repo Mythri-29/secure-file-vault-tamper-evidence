@@ -1,63 +1,68 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Secure Vault Dashboard</title>
 
     <style>
 
         body{
             margin:0;
-            font-family:Arial, sans-serif;
+            font-family:Arial;
             background:#0f172a;
-            color:white;
+            color:#e2e8f0;
         }
 
+        /* NAVBAR */
         .navbar{
             background:#1e293b;
-            padding:20px;
-            font-size:24px;
-            font-weight:bold;
+            padding:18px;
             text-align:center;
+            font-size:20px;
+            font-weight:600;
         }
 
-        .container{
+        /* CENTER WRAPPER */
+        .wrapper{
+            height:calc(100vh - 70px);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+
+        /* GRID (4 CARDS ONLY CENTERED) */
+        .grid{
             display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:25px;
-            padding:40px;
-            max-width:1000px;
-            margin:auto;
+            grid-template-columns:repeat(2, 220px);
+            grid-gap:20px;
         }
 
+        /* CARD */
         .card{
             background:#1e293b;
-            border-radius:15px;
-            padding:50px;
-            text-align:center;
+            height:140px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:14px;
             cursor:pointer;
-            transition:0.3s;
-            border:2px solid transparent;
+            font-size:18px;
+            font-weight:600;
+            transition:0.25s ease;
+            border:1px solid #1f2937;
         }
 
+        /* HOVER EFFECT */
         .card:hover{
-            transform:translateY(-5px);
+            background:#334155;
+            transform:translateY(-4px);
             border-color:#3b82f6;
-            background:#243447;
+            box-shadow:0 0 18px rgba(59,130,246,0.25);
         }
 
-        .icon{
-            font-size:50px;
-            margin-bottom:15px;
-        }
-
-        .title{
-            font-size:24px;
-            font-weight:bold;
-        }
-
-        .subtitle{
-            margin-top:10px;
-            color:#cbd5e1;
+        /* ACTIVE PRESS */
+        .card:active{
+            transform:scale(0.97);
         }
 
     </style>
@@ -65,37 +70,39 @@
 
 <body>
 
-<div class="navbar">
-    🔐 Secure Vault
-</div>
+<div class="navbar">🔐 Secure Vault Dashboard</div>
 
-<div class="container">
+<div class="wrapper">
 
-    <div class="card" onclick="location.href='upload.html'">
-        <div class="icon">📤</div>
-        <div class="title">Upload Files</div>
-        <div class="subtitle">Upload and secure files</div>
-    </div>
+    <div class="grid">
 
-    <div class="card" onclick="location.href='files.html'">
-        <div class="icon">📁</div>
-        <div class="title">My Files</div>
-        <div class="subtitle">View stored files</div>
-    </div>
+        <div class="card" onclick="go('upload.html')">
+            📤 Upload
+        </div>
 
-    <div class="card" onclick="location.href='audit.html'">
-        <div class="icon">📋</div>
-        <div class="title">Audit Logs</div>
-        <div class="subtitle">Track all activities</div>
-    </div>
+        <div class="card" onclick="go('files.html')">
+            📁 Files
+        </div>
 
-    <div class="card" onclick="location.href='profile.html'">
-        <div class="icon">👤</div>
-        <div class="title">Profile</div>
-        <div class="subtitle">User information</div>
+        <div class="card" onclick="go('audit.html')">
+            📊 Audit Logs
+        </div>
+
+        <div class="card" onclick="go('profile.html')">
+            👤 Profile
+        </div>
+
     </div>
 
 </div>
+
+<script>
+
+    function go(page){
+        window.location.href = page;
+    }
+
+</script>
 
 </body>
 </html>

@@ -12,7 +12,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/files")
@@ -30,101 +32,93 @@ public class FileController {
         this.fileService = fileService;
     }
 
-    // ---------------- TEST ----------------
-    @GetMapping("/test")
-    public String test() {
-        return "Secure Vault API is working!";
-    }
-
-    @GetMapping("/ping")
-    public String ping() {
-        return "pong";
-    }
-
-    // ---------------- LIST FILES ----------------
+    // LIST FILES
     @GetMapping
     public List<FileEntity> getAllFiles() {
         return fileRepository.findAll();
     }
-    @GetMapping("/details/{id}")
-    public ResponseEntity<FileEntity> getFileDetails(@PathVariable Long id) {
 
-        FileEntity fileEntity = fileRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("File not found"));
-
-        return ResponseEntity.ok(fileEntity);
-    }
-    // ---------------- UPLOAD (FIXED) ----------------
+    // UPLOAD FILE
     @PostMapping("/upload")
-    public String uploadFile(@RequestParam("file") MultipartFile file) throws Exception {
-        return fileService.uploadFile(file);
+    public String uploadFile(@RequestParam("file") MultipartFile file,
+                             @RequestParam("uploadedBy") String uploadedBy) throws Exception {
+
+        return fileService.uploadFile(file, uploadedBy);
     }
 
-
-    // ---------------- VERIFY ----------------
-    @GetMapping("/verify/{id}")
-    public String verifyFile(@PathVariable Long id) throws Exception {
-
-        FileEntity fileEntity = fileRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("File not found"));
-
-        File file = new File(fileEntity.getFilePath());
-
-        byte[] fileBytes = Files.readAllBytes(file.toPath());
-
-        java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-        byte[] hashBytes = digest.digest(fileBytes);
-
-        StringBuilder currentHash = new StringBuilder();
-        for (byte b : hashBytes) {
-            currentHash.append(String.format("%02x", b));
-        }
-
-        auditLogRepository.save(new AuditLog(id, "VERIFY"));
-
-        if (currentHash.toString().equals(fileEntity.getFileHash())) {
-            return "File is authentic. No tampering detected.";
-        } else {
-            return "WARNING: File has been tampered with!";
-        }
-    }
-
-    // ---------------- DOWNLOAD ----------------
+    // DOWNLOAD
     @GetMapping("/download/{id}")
-    public ResponseEntity<byte[]> downloadFile(@PathVariable Long id) throws Exception {
+    public ResponseEntity<byte[]> download(@PathVariable Long id) throws Exception {
 
-        FileEntity fileEntity = fileRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("File not found"));
+        FileEntity f = fileRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not found"));
 
-        File file = new File(fileEntity.getFilePath());
+        File file = new File(f.getFilePath());
 
-        byte[] fileContent = Files.readAllBytes(file.toPath());
-
-        auditLogRepository.save(new AuditLog(id, "DOWNLOAD"));
+        auditLogRepository.save(new AuditLog(
+                id, "DOWNLOAD", LocalDateTime.now()
+        ));
 
         return ResponseEntity.ok()
-                .header("Content-Disposition",
-                        "attachment; filename=" + fileEntity.getFileName())
-                .header("Content-Type",
-                        fileEntity.getFileType())
-                .body(fileContent);
+                .header("Content-Disposition", "attachment; filename=" + f.getFileName())
+                .body(Files.readAllBytes(file.toPath()));
     }
 
-    // ---------------- AUDIT TEST ----------------
-    @GetMapping("/audit-test")
-    public String auditTest() {
-        auditLogRepository.save(new AuditLog(999L, "TEST"));
-        return "Audit test inserted";
+    // VERIFY
+    @GetMapping("/verify/{id}")
+    public String verify(@PathVariable Long id) throws Exception {
+
+        FileEntity f = fileRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not found"));
+
+        File file = new File(f.getFilePath());
+
+        byte[] bytes = Files.readAllBytes(file.toPath());
+
+        java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+        byte[] hash = md.digest(bytes);
+
+        StringBuilder sb = new StringBuilder();
+        for(byte b : hash){
+            sb.append(String.format("%02x", b));
+        }
+
+        boolean tampered = !sb.toString().equals(f.getFileHash());
+
+        auditLogRepository.save(new AuditLog(
+                id,
+                "VERIFY",
+                LocalDateTime.now()
+        ));
+
+        return tampered ? "TAMPERED FILE DETECTED" : "FILE SAFE";
     }
 
-    // ---------------- AUDIT LOGS ----------------
+    // AUDIT LOGS
     @GetMapping("/audit/{fileId}")
-    public List<String> getAuditLogs(@PathVariable Long fileId) {
+    public List<AuditLog> audit(@PathVariable Long fileId) {
 
         return auditLogRepository.findAll()
                 .stream()
-                .filter(log -> log.getFileId().equals(fileId))
-                .map(AuditLog::getAction)
-                .toList();
+                .filter(a -> a.getFileId().equals(fileId))
+                .collect(Collectors.toList());
+    }
+    @GetMapping("/details/{id}")
+    public FileEntity getFileDetails(@PathVariable Long id) {
+
+        return fileRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+    }
+    @GetMapping("/preview/{id}")
+    public ResponseEntity<byte[]> preview(@PathVariable Long id) throws Exception {
+
+        FileEntity f = fileRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        File file = new File(f.getFilePath());
+
+        return ResponseEntity.ok()
+                .header("Content-Type", f.getFileType())
+                .body(Files.readAllBytes(file.toPath()));
     }
 }
