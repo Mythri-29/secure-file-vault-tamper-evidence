@@ -8,7 +8,7 @@
 
         body{
             margin:0;
-            font-family:Arial;
+            font-family:Arial, sans-serif;
             background:#0f172a;
             color:#e2e8f0;
         }
@@ -32,8 +32,7 @@
             margin-bottom:15px;
         }
 
-        /* SELECT + BUTTON */
-        select, button{
+        select,button{
             width:100%;
             padding:10px;
             margin-top:10px;
@@ -41,39 +40,31 @@
             border:1px solid #374151;
             background:#0f172a;
             color:#e2e8f0;
-            cursor:pointer;
         }
 
         button:hover{
             background:#1f2937;
+            cursor:pointer;
         }
 
         /* LOG BOX */
         .log-box{
-            max-height:420px;
-            overflow-y:auto;
-            margin-top:10px;
-            padding:10px;
-            border-radius:10px;
-            background:#0f172a;
-            border:1px solid #1f2937;
-        }
-
-        /* LOG ROW */
+    height: calc(100vh - 260px); /* key fix */
+    overflow-y: auto;
+    margin-top:10px;
+    padding:10px;
+    border-radius:10px;
+    background:#0f172a;
+    border:1px solid #1f2937;
+}
+        /* LOG ITEM */
         .log{
             display:flex;
             justify-content:space-between;
             padding:10px;
             margin-bottom:8px;
-            background:#111827;
             border-radius:8px;
-        }
-
-        /* LEFT SIDE */
-        .left{
-            display:flex;
-            gap:8px;
-            align-items:center;
+            background:#111827;
         }
 
         /* DOT */
@@ -81,13 +72,20 @@
             width:10px;
             height:10px;
             border-radius:50%;
+            margin-right:8px;
         }
 
-        /* COLORS */
-        .upload .dot{ background:#3b82f6; }
-        .verify .dot{ background:#22c55e; }
-        .download .dot{ background:#facc15; }
-        .tamper .dot{ background:#ef4444; }
+        /* TYPES */
+        .upload .dot{background:#3b82f6;}
+        .verify .dot{background:#22c55e;}
+        .download .dot{background:#facc15;}
+        .tamper .dot{background:#ef4444;}
+
+        .left{
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
 
         .time{
             font-size:12px;
@@ -103,25 +101,20 @@
 
 <body>
 
-<div class="navbar">
-    📊 Audit Logs System
-</div>
+<div class="navbar">📊 Secure Vault Audit Logs</div>
 
 <div class="container">
 
     <div class="card">
         <h3>Select File</h3>
-
         <select id="fileSelect"></select>
-
         <button onclick="loadAudit()">Load Logs</button>
     </div>
 
     <div class="card">
         <h3>Activity Timeline</h3>
-
         <div id="logs" class="log-box empty">
-            Select a file to view logs
+            Select a file
         </div>
     </div>
 
@@ -133,85 +126,79 @@
         return localStorage.getItem("token");
     }
 
-    /* LOAD FILES INTO DROPDOWN */
+    /* LOAD FILES */
     async function loadFilesForAudit(){
 
         const res = await fetch("http://localhost:8080/files",{
             headers:{
-                "Authorization":"Bearer " + getToken()
+                "Authorization":"Bearer "+getToken()
             }
         });
 
         const data = await res.json();
 
         const select = document.getElementById("fileSelect");
-        select.innerHTML = "";
+        select.innerHTML="";
 
-        data.forEach(file => {
-            const option = document.createElement("option");
-            option.value = file.id;
-            option.text = `${file.fileName} (ID: ${file.id})`;
-            select.appendChild(option);
+        data.forEach(f=>{
+            const opt=document.createElement("option");
+            opt.value=f.id;
+            opt.text=`${f.fileName} (ID: ${f.id})`;
+            select.appendChild(opt);
         });
     }
 
-    /* LOAD AUDIT LOGS */
+    /* LOAD AUDIT */
     async function loadAudit(){
 
-        const id = document.getElementById("fileSelect").value;
+        const id=document.getElementById("fileSelect").value;
 
-        const res = await fetch(`http://localhost:8080/files/audit/${id}`,{
+        const res=await fetch(`http://localhost:8080/files/audit/${id}`,{
             headers:{
-                "Authorization":"Bearer " + getToken()
+                "Authorization":"Bearer "+getToken()
             }
         });
 
-        const data = await res.json();
+        const data=await res.json();
 
-        const logs = document.getElementById("logs");
+        const logs=document.getElementById("logs");
         logs.classList.remove("empty");
-        logs.innerHTML = "";
+        logs.innerHTML="";
 
-        data.forEach(log => {
+        data.forEach(l=>{
 
-            let cls = "upload";
+            let cls="upload";
 
-            if(log.action === "UPLOAD") cls = "upload";
-            else if(log.action === "VERIFY") cls = "verify";
-            else if(log.action === "DOWNLOAD") cls = "download";
-            else if(log.action === "TAMPER") cls = "tamper";
+            if(l.action==="UPLOAD") cls="upload";
+            else if(l.action==="VERIFY") cls="verify";
+            else if(l.action==="DOWNLOAD") cls="download";
+            else if(l.action==="TAMPER") cls="tamper";
 
-            const dateObj = new Date(log.timestamp);
+            const date=new Date(l.timestamp);
 
-            const formattedDate = dateObj.toLocaleDateString("en-GB");
-            const formattedTime = dateObj.toLocaleTimeString();
+            const div=document.createElement("div");
+            div.className=`log ${cls}`;
 
-            const div = document.createElement("div");
-            div.className = `log ${cls}`;
-
-            div.innerHTML = `
+            div.innerHTML=`
                 <div class="left">
                     <span class="dot"></span>
-                    <span>${log.action}</span>
+                    <span>${l.action}</span>
                 </div>
-
                 <div class="time">
-                    ${formattedDate} | ${formattedTime}
+                    ${date.toLocaleDateString()} | ${date.toLocaleTimeString()}
                 </div>
             `;
 
             logs.appendChild(div);
         });
 
-        if(data.length === 0){
-            logs.innerHTML = `<div class="empty">No audit logs found</div>`;
+        if(data.length===0){
+            logs.innerHTML=`<div class="empty">No logs found</div>`;
         }
     }
 
     /* INIT */
-    window.onload = function(){
-        loadFilesForAudit();
-    };
+    window.onload=loadFilesForAudit;
 
 </script>
 

@@ -5,180 +5,201 @@
     <title>My Files - Secure Vault</title>
 
     <style>
-
-        body{
-            margin:0;
-            font-family:Arial, sans-serif;
-            background:#0f172a;
-            color:#e2e8f0;
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #0f172a;
+            color: #e2e8f0;
         }
 
-        /* NAVBAR */
-        .navbar{
-            background:#1e293b;
-            padding:18px;
-            text-align:center;
-            font-size:20px;
-            font-weight:600;
-            letter-spacing:0.5px;
+        .navbar {
+            background: #1e293b;
+            padding: 18px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
         }
 
-        /* LAYOUT */
-        .container{
-            display:flex;
-            gap:18px;
-            padding:18px;
-            height:calc(100vh - 70px);
-            box-sizing:border-box;
+        .container {
+            display: flex;
+            gap: 18px;
+            padding: 18px;
+            height: calc(100vh - 70px);
         }
 
-        /* LEFT */
-        .left{
-            width:50%;
-            background:#1e293b;
-            padding:18px;
-            border-radius:14px;
-            overflow-y:auto;
+        .left, .right {
+            width: 50%;
+            background: #1e293b;
+            padding: 18px;
+            border-radius: 14px;
+            overflow-y: auto;
         }
 
-        /* RIGHT */
-        .right{
-            width:50%;
-            background:#1e293b;
-            padding:18px;
-            border-radius:14px;
+        .file-item {
+            background: #0f172a;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            border: 1px solid #1f2937;
         }
 
-        /* FILE ITEM */
-        .file-item{
-            background:#0f172a;
-            padding:12px 14px;
-            margin:10px 0;
-            border-radius:10px;
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            border:1px solid #1f2937;
-            transition:0.2s ease;
+        button {
+            padding: 8px 12px;
+            background: #2563eb;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
         }
 
-        .file-item:hover{
-            border-color:#334155;
-            transform:translateY(-1px);
+        button:hover { opacity: 0.9; }
+
+        .meta {
+            font-size: 14px;
+            color: #94a3b8;
+            margin: 4px 0;
         }
 
-        /* BUTTONS (IMPROVED — less dull) */
-        button{
-            padding:8px 12px;
-            background:linear-gradient(145deg,#1f2937,#111827);
-            border:1px solid #374151;
-            color:#e5e7eb;
-            border-radius:10px;
-            cursor:pointer;
-            font-size:13px;
-            transition:0.2s ease;
-        }
+        .safe { color: #22c55e; }
+        .tampered { color: #ef4444; }
 
-        button:hover{
-            background:#1f2937;
-            border-color:#4b5563;
-            transform:translateY(-1px);
-        }
-
-        button:active{
-            transform:scale(0.97);
-        }
-
-        button:focus{
-            outline:none;
-            box-shadow:0 0 0 2px #3b82f6;
-        }
-
-        /* STATUS */
-        .safe{
-            color:#22c55e;
-            font-weight:600;
-        }
-
-        .tampered{
-            color:#ef4444;
-            font-weight:600;
-        }
-
-        /* EMPTY */
-        .empty{
-            color:#94a3b8;
-        }
-
-        /* TOOLBOX */
-        .tools{
-            margin-bottom:15px;
-            padding:12px;
-            background:#0f172a;
-            border-radius:10px;
-            border:1px solid #1f2937;
-        }
-
-        .tools h4{
-            margin:0 0 10px 0;
-            font-size:14px;
-            color:#cbd5e1;
-        }
-
-        .tools button{
-            width:100%;
-            margin-bottom:8px;
-        }
-
-        .btn-group{
-            display:flex;
-            gap:8px;
-            margin-top:12px;
-            flex-wrap:wrap;
-        }
+        /* scan animation */
         .scan-box {
-    margin-top: 12px;
-    padding: 10px;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #1f2937;
+            border-radius: 10px;
+        }
+
+        .bar {
+            height: 5px;
+            background: #1f2937;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .bar::after {
+            content: "";
+            width: 40%;
+            height: 100%;
+            background: #3b82f6;
+            position: absolute;
+            animation: scan 1s infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(250%); }
+        }
+        .mini-scan {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin-top: 10px;
+    border-radius: 8px;
     background: #0f172a;
     border: 1px solid #1f2937;
-    border-radius: 10px;
     font-size: 13px;
     color: #cbd5e1;
 }
 
-.bar {
-    margin-top: 8px;
+/* tiny moving dot */
+.scan-dot {
+    width: 6px;
     height: 6px;
-    width: 100%;
-    background: #1f2937;
-    border-radius: 5px;
+    background: #3b82f6;
+    border-radius: 50%;
+    animation: pulseMove 0.9s infinite ease-in-out;
+}
+
+@keyframes pulseMove {
+    0% { transform: translateX(0); opacity: 0.4; }
+    50% { transform: translateX(10px); opacity: 1; }
+    100% { transform: translateX(0); opacity: 0.4; }
+}
+        .pro-scan {
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #0f172a, #111827);
+    border: 1px solid #1f2937;
     overflow: hidden;
     position: relative;
 }
 
-.bar::after {
+/* top glow line */
+.pro-scan::before {
     content: "";
     position: absolute;
-    height: 100%;
+    top: 0;
+    left: -40%;
     width: 40%;
+    height: 2px;
     background: #3b82f6;
-    border-radius: 5px;
-    animation: scan 1.2s infinite;
+    animation: sweep 1.2s infinite;
+    box-shadow: 0 0 10px #3b82f6;
 }
 
-@keyframes scan {
+@keyframes sweep {
     0% { left: -40%; }
-    100% { left: 100%; }
+    100% { left: 120%; }
 }
 
+/* scanning text */
+.scan-text {
+    font-size: 14px;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* animated dots */
+.dot-flash {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.dot-flash span {
+    width: 5px;
+    height: 5px;
+    background: #3b82f6;
+    border-radius: 50%;
+    animation: bounce 1s infinite ease-in-out;
+}
+
+.dot-flash span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.dot-flash span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* result styles */
+.scan-success {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.scan-fail {
+    color: #ef4444;
+    font-weight: 600;
+}
     </style>
 </head>
 
 <body>
 
-<div class="navbar">
-    📁 Secure File Vault - My Files
-</div>
+<div class="navbar">📁 Secure File Vault</div>
 
 <div class="container">
 
@@ -191,37 +212,26 @@
 
     <!-- RIGHT -->
     <div class="right">
-
         <h3>File Details</h3>
-
-        <!-- TOOL SECTION (NEW) -->
-        <div class="tools">
-            <h4>🧪 Tools</h4>
-            <button onclick="simulateTamper()">Simulate Tampering (Demo)</button>
-        </div>
-
-        <div id="details" class="empty">
-            Select a file to view details
-        </div>
-
+        <div id="details">Select a file</div>
     </div>
 
 </div>
 
 <script>
 
-    let currentFileId = null;
+    let currentFile = null;
 
-    function getToken(){
+    function getToken() {
         return localStorage.getItem("token");
     }
 
     /* LOAD FILES */
-    async function loadFiles(){
+    async function loadFiles() {
 
-        const res = await fetch("http://localhost:8080/files",{
-            headers:{
-                "Authorization":"Bearer " + getToken()
+        const res = await fetch("http://localhost:8080/files", {
+            headers: {
+                "Authorization": "Bearer " + getToken()
             }
         });
 
@@ -236,8 +246,11 @@
             div.className = "file-item";
 
             div.innerHTML = `
-                <span>${file.fileName}</span>
-               <button onclick="showDetails(${file.id})">Details</button>
+                <div>
+                    <b>${file.fileName}</b>
+                    <div class="meta">${file.fileType}</div>
+                </div>
+                <button onclick='showDetails(${JSON.stringify(file)})'>Details</button>
             `;
 
             list.appendChild(div);
@@ -245,148 +258,211 @@
     }
 
     /* SHOW DETAILS */
-    async function showDetails(id){
+    function showDetails(file) {
 
-        currentFileId = id;
-
-        const res = await fetch(`http://localhost:8080/files/details/${id}`,{
-            headers:{
-                "Authorization":"Bearer " + getToken()
-            }
-        });
-
-        const file = await res.json();
-
-        const statusClass = file.status === "SAFE" ? "safe" : "tampered";
+        currentFile = file;
 
         document.getElementById("details").innerHTML = `
-            <p><b>Name:</b> ${file.fileName}</p>
-            <p><b>Uploaded By:</b> ${file.uploadedBy || "-"}</p>
-            <p><b>Status:</b> <span class="${statusClass}">${file.status}</span></p>
-            <p><b>Hash:</b> ${file.fileHash}</p>
+            <h4>${file.fileName}</h4>
 
-            <div class="btn-group">
-                <button onclick="previewFile(${file.id})">Preview</button>
-                <button onclick="downloadFile(${file.id})">Download</button>
-                <button onclick="verifyFile(${file.id})">Verify</button>
-            </div>
+            <div class="meta">Type: ${file.fileType}</div>
+            <div class="meta">Uploaded By: ${file.uploadedBy || "N/A"}</div>
+            <div class="meta">Upload Time: ${file.uploadedAt || "N/A"}</div>
+            <div class="meta">Status: <b class="${file.status === 'TAMPERED' ? 'tampered' : 'safe'}">
+                ${file.status || "UNKNOWN"}
+            </b></div>
 
-            <div id="verifyResult" style="margin-top:12px;"></div>
+           
+            <br>
+
+            <button onclick="previewFile()">Preview</button>
+            <button onclick="downloadFile()">Download</button>
+            <button onclick="verifyFile()">Verify</button>
+
+            <div id="result"></div>
         `;
     }
 
-    /* VERIFY */
-    async function verifyFile(id){
-
-    const box = document.getElementById("verifyResult");
-
-    // STEP 1: show animation immediately
-    box.innerHTML = `
-        <div class="scan-box">
-            🔍 Scanning integrity...
-            <div class="bar"></div>
-        </div>
-    `;
-
-    // small delay to simulate real system
-    setTimeout(async () => {
-
-        const res = await fetch(`http://localhost:8080/files/verify/${id}`,{
-            headers:{
-                "Authorization":"Bearer " + getToken()
-            }
-        });
-
-        const text = await res.text();
-
-        // STEP 2: show final result
-        box.innerHTML = `
-            <div class="scan-box">
-                ${text.includes("tampered") || text.includes("TAMPERED")
-                    ? "🔴 Result: TAMPERED"
-                    : "🟢 Result: SAFE"}
-                <br><br>
-                ${text}
-            </div>
-        `;
-
-    }, 1200);
-}
-
-    /* DOWNLOAD */
-    @GetMapping("/download/{id}")
-public ResponseEntity<byte[]> download(@PathVariable Long id) throws Exception {
-
-    FileEntity f = fileRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Not found"));
-
-    File file = new File(f.getFilePath());
-
-    auditLogRepository.save(
-            new AuditLog(
-                    id,
-                    "DOWNLOAD",
-                    LocalDateTime.now()
-            )
-    );
-
-    return ResponseEntity.ok()
-            .header("Content-Disposition",
-                    "attachment; filename=\"" + f.getFileName() + "\"")
-            .header("Content-Type", f.getFileType())
-            .body(Files.readAllBytes(file.toPath()));
-}
-
     /* PREVIEW */
-    function previewFile(id){
+    async function previewFile() {
 
-    window.open(
-        `http://localhost:8080/files/preview/${id}`,
-        "_blank"
-    );
-}
-async function previewFile(id){
+    if (!currentFile) return;
 
-    const response = await fetch(
-        `http://localhost:8080/files/preview/${id}`,
+    const res = await fetch(
+        "http://localhost:8080/files/download/" + currentFile.id,
         {
-            headers:{
-                "Authorization":"Bearer " + getToken()
+            headers: {
+                "Authorization": "Bearer " + getToken()
             }
         }
     );
 
-    const blob = await response.blob();
+    if (!res.ok) {
+        alert("Preview failed (401/403)");
+        return;
+    }
 
+    const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
 
+    const type = (currentFile.fileType || "").toLowerCase();
+    const name = (currentFile.fileName || "").toLowerCase();
+
+    // =========================
+    // IMAGE PREVIEW
+    // =========================
+    // IMAGE PREVIEW (OPEN IN BROWSER TAB)
+if (type.includes("image") ||
+    name.endsWith(".png") ||
+    name.endsWith(".jpg") ||
+    name.endsWith(".jpeg") ||
+    name.endsWith(".gif")) {
+
+    const win = window.open("");
+
+    const img = new Image();
+
+    img.src = url;
+    img.style.maxWidth = "100%";
+    img.style.height = "auto";
+    img.style.display = "block";
+    img.style.margin = "0 auto";
+    img.style.background = "#0f172a";
+
+    win.document.body.style.margin = "0";
+    win.document.body.style.background = "#0f172a";
+    win.document.body.appendChild(img);
+
+    return;
+}
+
+    // =========================
+    // PDF PREVIEW
+    // =========================
+    if (
+        type.includes("pdf") ||
+        name.endsWith(".pdf")
+    ) {
+        window.open(url, "_blank");
+        return;
+    }
+
+    // =========================
+    // TEXT PREVIEW (IMPORTANT FIX)
+    // =========================
+    if (
+        type.includes("text") ||
+        name.endsWith(".txt") ||
+        name.endsWith(".json") ||
+        name.endsWith(".log")
+    ) {
+
+        const text = await blob.text();   // ✅ FIX HERE (NOT res.text)
+
+        const win = window.open("");
+        win.document.write(`
+            <html>
+            <body style="margin:0;background:#0f172a;color:#e2e8f0;padding:20px;font-family:monospace;">
+                <pre style="white-space:pre-wrap;">${text}</pre>
+            </body>
+            </html>
+        `);
+
+        return;
+    }
+
+    // =========================
+    // FALLBACK
+    // =========================
     window.open(url, "_blank");
 }
 
-    /* SIMULATE TAMPER (NEW FEATURE) */
-    async function simulateTamper(){
+    /* DOWNLOAD (FIXED FOR SECURITY) */
+    async function downloadFile() {
 
-        if(!currentFileId){
-            alert("Select a file first");
-            return;
-        }
+    if (!currentFile) return;
 
-        // call verify first just to ensure file exists
-        const res = await fetch(`http://localhost:8080/files/verify/${currentFileId}`,{
-            headers:{
-                "Authorization":"Bearer " + getToken()
+    const res = await fetch(
+        "http://localhost:8080/files/download/" + currentFile.id,
+        {
+            headers: {
+                "Authorization": "Bearer " + getToken()
             }
-        });
+        }
+    );
+
+    if (!res.ok) {
+        alert("Download failed (401/403)");
+        return;
+    }
+
+    const blob = await res.blob();
+
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = currentFile.fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    window.URL.revokeObjectURL(url);
+}
+
+    /* VERIFY WITH ANIMATION */
+   async function verifyFile() {
+
+    const box = document.getElementById("result");
+
+    // STEP 1: start scan UI
+    box.innerHTML = `
+        <div class="pro-scan">
+            <div class="scan-text">
+                <div class="dot-flash">
+                    <span></span><span></span><span></span>
+                </div>
+                Running integrity scan...
+            </div>
+        </div>
+    `;
+
+    // STEP 2: fake processing delay (feels real)
+    setTimeout(async () => {
+
+        const res = await fetch(
+            "http://localhost:8080/files/verify/" + currentFile.id,
+            {
+                headers: {
+                    "Authorization": "Bearer " + getToken()
+                }
+            }
+        );
 
         const text = await res.text();
 
-        // show tampered result in UI instantly
-        document.getElementById("details").innerHTML += `
-            <p style="margin-top:15px;"><b>Simulation Result:</b></p>
-            <p class="tampered">🔴 FILE TAMPERED (SIMULATION TRIGGERED)</p>
-            <p>${text}</p>
+        const isTampered = text.toLowerCase().includes("tampered");
+
+        // STEP 3: final result UI
+        box.innerHTML = `
+            <div class="pro-scan">
+
+                <div class="scan-text">
+                    ${isTampered
+                        ? "<span class='scan-fail'>⚠ File Integrity Failed</span>"
+                        : "<span class='scan-success'>✔ File Verified Secure</span>"
+                    }
+                </div>
+
+                <div style="margin-top:10px;font-size:13px;color:#94a3b8;">
+                    ${text}
+                </div>
+
+            </div>
         `;
-    }
+
+    }, 1300);
+}
 
 </script>
 
