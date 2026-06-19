@@ -1,470 +1,999 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Files - Secure Vault</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Vault — File Vault</title>
+    <link rel="stylesheet" href="shared.css">
     <style>
-        body {
-            margin: 0;
-            font-family: Arial;
-            background: #0f172a;
-            color: #e2e8f0;
+        /* ── Vault layout: sidebar + left panel + right panel ── */
+        .vault-layout {
+          display: flex;
+          height: 100%;
+          overflow: hidden;
         }
 
-        .navbar {
-            background: #1e293b;
-            padding: 18px;
-            text-align: center;
-            font-size: 20px;
-            font-weight: 600;
+        /* ── File list panel ── */
+        .file-list-panel {
+          width: 380px;
+          min-width: 320px;
+          flex-shrink: 0;
+          border-right: 1px solid var(--border);
+          display: flex;
+          flex-direction: column;
+          background: var(--panel);
+          overflow: hidden;
         }
 
-        .container {
-            display: flex;
-            gap: 18px;
-            padding: 18px;
-            height: calc(100vh - 70px);
+        .panel-toolbar {
+          padding: 14px 16px;
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          flex-shrink: 0;
         }
 
-        .left, .right {
-            width: 50%;
-            background: #1e293b;
-            padding: 18px;
-            border-radius: 14px;
-            overflow-y: auto;
+        .panel-toolbar-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .panel-toolbar-top h3 {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--text-1);
+          display: flex;
+          align-items: center;
+          gap: 7px;
+        }
+
+        .panel-toolbar-top h3 svg { width: 14px; height: 14px; color: var(--text-3); }
+
+        .file-count-badge {
+          font-size: 10px;
+          font-family: var(--mono);
+          background: rgba(59,130,246,0.1);
+          color: var(--accent-hi);
+          border: 1px solid rgba(59,130,246,0.2);
+          border-radius: 10px;
+          padding: 2px 8px;
+          font-weight: 600;
+        }
+
+        .panel-search {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: var(--r-sm);
+          padding: 7px 10px;
+        }
+
+        .panel-search:focus-within { border-color: var(--accent); }
+        .panel-search svg { width: 13px; height: 13px; color: var(--text-3); flex-shrink: 0; }
+        .panel-search input { background: none; border: none; outline: none; font-size: 13px; color: var(--text-1); width: 100%; font-family: var(--sans); }
+        .panel-search input::placeholder { color: var(--text-3); }
+
+        /* Sort/filter row */
+        .filter-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          border-bottom: 1px solid var(--border);
+          flex-shrink: 0;
+        }
+
+        .filter-chip {
+          font-size: 11px;
+          font-weight: 500;
+          padding: 3px 10px;
+          border-radius: 20px;
+          cursor: pointer;
+          border: 1px solid var(--border);
+          color: var(--text-3);
+          background: transparent;
+          transition: all 0.15s;
+          font-family: var(--sans);
+        }
+
+        .filter-chip:hover { border-color: var(--border-hi); color: var(--text-2); }
+        .filter-chip.active {
+          background: rgba(59,130,246,0.1);
+          border-color: rgba(59,130,246,0.25);
+          color: var(--accent-hi);
+        }
+
+        /* ── File list ── */
+        .file-list {
+          flex: 1;
+          overflow-y: auto;
         }
 
         .file-item {
-            background: #0f172a;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 10px;
-            display: flex;
-            justify-content: space-between;
-            border: 1px solid #1f2937;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          cursor: pointer;
+          border-left: 2px solid transparent;
+          transition: all 0.12s;
+          border-bottom: 1px solid var(--border);
         }
 
-        button {
-            padding: 8px 12px;
-            background: #2563eb;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
+        .file-item:hover { background: var(--card); }
+
+        .file-item.selected {
+          background: rgba(59,130,246,0.06);
+          border-left-color: var(--accent);
         }
 
-        button:hover { opacity: 0.9; }
-
-        .meta {
-            font-size: 14px;
-            color: #94a3b8;
-            margin: 4px 0;
+        .file-item-icon {
+          width: 36px; height: 36px;
+          border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          font-family: var(--mono);
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          flex-shrink: 0;
         }
 
-        .safe { color: #22c55e; }
-        .tampered { color: #ef4444; }
+        .file-item-meta { flex: 1; min-width: 0; }
 
-        /* scan animation */
-        .scan-box {
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #1f2937;
-            border-radius: 10px;
+        .file-item-name {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-1);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-bottom: 3px;
         }
 
-        .bar {
-            height: 5px;
-            background: #1f2937;
-            margin-top: 6px;
-            overflow: hidden;
+        .file-item-sub {
+          font-size: 11px;
+          color: var(--text-3);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-family: var(--mono);
         }
 
-        .bar::after {
-            content: "";
-            width: 40%;
-            height: 100%;
-            background: #3b82f6;
-            position: absolute;
-            animation: scan 1s infinite;
+        /* ── Inspector panel ── */
+        .inspector-panel {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          background: var(--bg);
         }
 
-        @keyframes scan {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(250%); }
+        .inspector-empty {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+          text-align: center;
+          padding: 40px;
         }
-        .mini-scan {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    margin-top: 10px;
-    border-radius: 8px;
-    background: #0f172a;
-    border: 1px solid #1f2937;
-    font-size: 13px;
-    color: #cbd5e1;
-}
 
-/* tiny moving dot */
-.scan-dot {
-    width: 6px;
-    height: 6px;
-    background: #3b82f6;
-    border-radius: 50%;
-    animation: pulseMove 0.9s infinite ease-in-out;
-}
+        .inspector-empty .empty-icon {
+          width: 64px; height: 64px;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 18px;
+          display: flex; align-items: center; justify-content: center;
+        }
 
-@keyframes pulseMove {
-    0% { transform: translateX(0); opacity: 0.4; }
-    50% { transform: translateX(10px); opacity: 1; }
-    100% { transform: translateX(0); opacity: 0.4; }
-}
-        .pro-scan {
-    margin-top: 12px;
-    padding: 14px;
-    border-radius: 12px;
-    background: linear-gradient(145deg, #0f172a, #111827);
-    border: 1px solid #1f2937;
-    overflow: hidden;
-    position: relative;
-}
+        .inspector-empty .empty-icon svg { width: 28px; height: 28px; color: var(--text-3); }
+        .inspector-empty h3 { font-size: 16px; font-weight: 600; color: var(--text-2); }
+        .inspector-empty p  { font-size: 13px; color: var(--text-3); max-width: 280px; line-height: 1.5; }
 
-/* top glow line */
-.pro-scan::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -40%;
-    width: 40%;
-    height: 2px;
-    background: #3b82f6;
-    animation: sweep 1.2s infinite;
-    box-shadow: 0 0 10px #3b82f6;
-}
+        .inspector-content { flex: 1; overflow-y: auto; display: none; flex-direction: column; }
+        .inspector-content.visible { display: flex; }
 
-@keyframes sweep {
-    0% { left: -40%; }
-    100% { left: 120%; }
-}
+        /* Inspector header */
+        .inspector-head {
+          padding: 20px 24px 16px;
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          align-items: flex-start;
+          gap: 14px;
+          flex-shrink: 0;
+          background: var(--panel);
+        }
 
-/* scanning text */
-.scan-text {
-    font-size: 14px;
-    color: #cbd5e1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+        .inspector-file-icon {
+          width: 50px; height: 50px;
+          border-radius: 12px;
+          display: flex; align-items: center; justify-content: center;
+          font-family: var(--mono);
+          font-size: 11px;
+          font-weight: 700;
+          flex-shrink: 0;
+        }
 
-/* animated dots */
-.dot-flash {
-    display: inline-flex;
-    gap: 4px;
-}
+        .inspector-head-info { flex: 1; min-width: 0; }
 
-.dot-flash span {
-    width: 5px;
-    height: 5px;
-    background: #3b82f6;
-    border-radius: 50%;
-    animation: bounce 1s infinite ease-in-out;
-}
+        .inspector-file-name {
+          font-size: 16px;
+          font-weight: 700;
+          color: var(--text-1);
+          letter-spacing: -0.3px;
+          word-break: break-all;
+          margin-bottom: 6px;
+        }
 
-.dot-flash span:nth-child(2) {
-    animation-delay: 0.2s;
-}
+        .inspector-file-meta {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
 
-.dot-flash span:nth-child(3) {
-    animation-delay: 0.4s;
-}
+        .inspector-meta-chip {
+          font-size: 11px;
+          font-family: var(--mono);
+          color: var(--text-3);
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
 
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); opacity: 0.4; }
-    50% { transform: translateY(-4px); opacity: 1; }
-}
+        .inspector-meta-chip svg { width: 11px; height: 11px; }
 
-/* result styles */
-.scan-success {
-    color: #22c55e;
-    font-weight: 600;
-}
+        /* Inspector body */
+        .inspector-body { padding: 20px 24px; flex: 1; }
 
-.scan-fail {
-    color: #ef4444;
-    font-weight: 600;
-}
+        .detail-section {
+          margin-bottom: 24px;
+        }
+
+        .detail-section-title {
+          font-size: 10.5px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--text-3);
+          margin-bottom: 12px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .detail-section-title svg { width: 11px; height: 11px; }
+
+        .detail-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: var(--r-md);
+          overflow: hidden;
+        }
+
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 16px;
+          padding: 10px 14px;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .detail-row:last-child { border-bottom: none; }
+
+        .detail-key {
+          font-size: 11.5px;
+          font-weight: 500;
+          color: var(--text-3);
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        .detail-val {
+          font-size: 12px;
+          color: var(--text-1);
+          font-family: var(--mono);
+          text-align: right;
+          word-break: break-all;
+        }
+
+        /* Hash display */
+        .hash-box {
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: var(--r-md);
+          padding: 12px 14px;
+          font-family: var(--mono);
+          font-size: 11px;
+          color: var(--accent-hi);
+          word-break: break-all;
+          line-height: 1.6;
+          position: relative;
+        }
+
+        .hash-copy-btn {
+          position: absolute;
+          top: 8px; right: 8px;
+          width: 24px; height: 24px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 5px;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .hash-copy-btn:hover { background: var(--card-hi); border-color: var(--border-hi); }
+        .hash-copy-btn svg { width: 12px; height: 12px; color: var(--text-2); }
+
+        /* Action buttons */
+        .inspector-actions {
+          padding: 16px 24px;
+          border-top: 1px solid var(--border);
+          display: flex;
+          gap: 8px;
+          flex-shrink: 0;
+          background: var(--panel);
+        }
+
+        /* ── Scan overlay / verification modal ── */
+        .scan-overlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.7);
+          z-index: 100;
+          align-items: center;
+          justify-content: center;
+          backdrop-filter: blur(4px);
+        }
+
+        .scan-overlay.open { display: flex; }
+
+        .scan-modal {
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 20px;
+          padding: 36px 40px;
+          width: 380px;
+          text-align: center;
+          box-shadow: 0 32px 64px rgba(0,0,0,0.6);
+          animation: modalIn 0.3s cubic-bezier(0.16,1,0.3,1);
+        }
+
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.9) translateY(20px); }
+          to   { opacity: 1; transform: scale(1)   translateY(0);    }
+        }
+
+        .scan-icon-wrap {
+          width: 72px; height: 72px;
+          border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          margin: 0 auto 20px;
+          position: relative;
+        }
+
+        .scan-icon-wrap.scanning {
+          background: rgba(59,130,246,0.1);
+          border: 2px solid rgba(59,130,246,0.3);
+          animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        .scan-icon-wrap.safe {
+          background: rgba(34,197,94,0.12);
+          border: 2px solid rgba(34,197,94,0.3);
+        }
+
+        .scan-icon-wrap.tampered {
+          background: rgba(239,68,68,0.12);
+          border: 2px solid rgba(239,68,68,0.3);
+        }
+
+        @keyframes pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.3); }
+          50%       { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
+        }
+
+        .scan-icon-wrap svg { width: 32px; height: 32px; }
+        .scan-icon-wrap.scanning svg { color: var(--accent-hi); }
+        .scan-icon-wrap.safe     svg { color: var(--success); }
+        .scan-icon-wrap.tampered svg { color: var(--danger); }
+
+        .scan-title {
+          font-size: 20px;
+          font-weight: 700;
+          letter-spacing: -0.4px;
+          margin-bottom: 6px;
+        }
+
+        .scan-title.scanning { color: var(--text-2); }
+        .scan-title.safe     { color: var(--success); }
+        .scan-title.tampered { color: var(--danger); }
+
+        .scan-sub {
+          font-size: 13px;
+          color: var(--text-3);
+          line-height: 1.5;
+          margin-bottom: 24px;
+        }
+
+        .scan-progress-track {
+          height: 4px;
+          background: var(--border);
+          border-radius: 2px;
+          overflow: hidden;
+          margin-bottom: 24px;
+        }
+
+        .scan-progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, var(--accent) 0%, var(--accent-hi) 100%);
+          border-radius: 2px;
+          transition: width 0.4s ease;
+          width: 0%;
+        }
+
+        .scan-progress-fill.safe     { background: linear-gradient(90deg, #16a34a, var(--success)); }
+        .scan-progress-fill.tampered { background: linear-gradient(90deg, #b91c1c, var(--danger)); }
+
+        .scan-close-btn {
+          padding: 10px 28px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--r-sm);
+          color: var(--text-2);
+          font-family: var(--sans);
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s;
+          display: none;
+        }
+
+        .scan-close-btn:hover { background: var(--card-hi); color: var(--text-1); }
+
+        .scan-dots span {
+          display: inline-block;
+          width: 6px; height: 6px;
+          background: var(--text-3);
+          border-radius: 50%;
+          margin: 0 2px;
+          animation: dotBounce 1.2s infinite;
+        }
+
+        .scan-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .scan-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotBounce {
+          0%, 100% { transform: translateY(0);  opacity: 0.4; }
+          50%       { transform: translateY(-5px); opacity: 1; }
+        }
     </style>
 </head>
-
 <body>
+<div class="app-shell">
 
-<div class="navbar">📁 Secure File Vault</div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7z"/>
+                    <polyline points="9 12 11 14 15 10"/>
+                </svg>
+            </div>
+            <div class="brand-name">Secure <span>Vault</span></div>
+        </div>
+        <div class="nav-section-label">Platform</div>
+        <a href="dashboard.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Dashboard
+        </a>
+        <a href="upload.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            Upload File
+        </a>
+        <a href="files.html" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            File Vault
+        </a>
+        <a href="audit.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Audit Logs
+        </a>
+        <div class="nav-section-label">Account</div>
+        <a href="profile.html" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile
+        </a>
+        <div class="sidebar-footer">
+            <div class="user-chip" onclick="window.location.href='profile.html'">
+                <div class="user-avatar" id="sidebarAvatar">U</div>
+                <div class="user-info">
+                    <div class="user-name" id="sidebarUser">User</div>
+                    <div class="user-role">Vault User</div>
+                </div>
+            </div>
+        </div>
+    </aside>
 
-<div class="container">
+    <!-- MAIN -->
+    <div class="main-area">
+        <div class="topbar">
+            <div class="topbar-title">File Vault</div>
+            <div class="topbar-actions">
+                <a href="upload.html" class="btn btn-primary" style="font-size:12.5px;padding:7px 14px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Upload File
+                </a>
+                <button class="icon-btn" onclick="logout()" title="Sign out">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
+            </div>
+        </div>
 
-    <!-- LEFT -->
-    <div class="left">
-        <h3>Files</h3>
-        <button onclick="loadFiles()">Load Files</button>
-        <div id="fileList"></div>
+        <!-- VAULT SPLIT LAYOUT -->
+        <div class="vault-layout">
+
+            <!-- FILE LIST PANEL -->
+            <div class="file-list-panel">
+                <div class="panel-toolbar">
+                    <div class="panel-toolbar-top">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                            All Files
+                        </h3>
+                        <span class="file-count-badge" id="fileCount">0 files</span>
+                    </div>
+                    <div class="panel-search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="fileSearch" placeholder="Search files…" oninput="filterFiles()">
+                    </div>
+                </div>
+
+                <div class="filter-row">
+                    <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
+                    <button class="filter-chip" onclick="setFilter('SAFE', this)">Safe</button>
+                    <button class="filter-chip" onclick="setFilter('TAMPERED', this)">Tampered</button>
+                    <button class="filter-chip" onclick="setFilter('UNKNOWN', this)">Unknown</button>
+                </div>
+
+                <div class="file-list" id="fileList">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                        <h4>No files yet</h4>
+                        <p>Upload your first file to get started.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INSPECTOR PANEL -->
+            <div class="inspector-panel">
+
+                <!-- Empty state -->
+                <div class="inspector-empty" id="inspectorEmpty">
+                    <div class="empty-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="9" y1="14" x2="15" y2="14"/><line x1="12" y1="11" x2="12" y2="17"/></svg>
+                    </div>
+                    <h3>Select a file to inspect</h3>
+                    <p>Click any file in the panel to view its details, cryptographic hash, provenance, and actions.</p>
+                </div>
+
+                <!-- Inspector content -->
+                <div class="inspector-content" id="inspectorContent">
+                    <div class="inspector-head">
+                        <div class="inspector-file-icon" id="inspFileIcon">FILE</div>
+                        <div class="inspector-head-info">
+                            <div class="inspector-file-name" id="inspFileName">—</div>
+                            <div class="inspector-file-meta">
+                                <span class="inspector-meta-chip" id="inspStatus"></span>
+                                <span class="inspector-meta-chip" id="inspSize">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  —
+                </span>
+                                <span class="inspector-meta-chip" id="inspDate">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  —
+                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="inspector-body">
+
+                        <!-- Details -->
+                        <div class="detail-section">
+                            <div class="detail-section-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                File Details
+                            </div>
+                            <div class="detail-grid">
+                                <div class="detail-row">
+                                    <span class="detail-key">File ID</span>
+                                    <span class="detail-val" id="dFileId">—</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-key">File Name</span>
+                                    <span class="detail-val" id="dFileName">—</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-key">File Type</span>
+                                    <span class="detail-val" id="dFileType">—</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-key">Uploaded By</span>
+                                    <span class="detail-val" id="dUploadedBy">—</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-key">Upload Date</span>
+                                    <span class="detail-val" id="dUploadDate">—</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-key">Current Status</span>
+                                    <span class="detail-val" id="dStatus">—</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hash -->
+                        <div class="detail-section">
+                            <div class="detail-section-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7z"/></svg>
+                                Cryptographic Signature
+                            </div>
+                            <div class="hash-box">
+                                <div style="font-size:9px;color:var(--text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">SHA-256</div>
+                                <span id="dHash">—</span>
+                                <div class="hash-copy-btn" onclick="copyHash()" title="Copy hash">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="inspector-actions">
+                        <button class="btn btn-ghost" onclick="previewFile()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            Preview
+                        </button>
+                        <button class="btn btn-ghost" onclick="downloadFile()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download
+                        </button>
+                        <button class="btn btn-primary" onclick="verifyFile()" style="margin-left:auto;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7z"/></svg>
+                            Verify Integrity
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
+</div>
 
-    <!-- RIGHT -->
-    <div class="right">
-        <h3>File Details</h3>
-        <div id="details">Select a file</div>
+<!-- SCAN MODAL -->
+<div class="scan-overlay" id="scanOverlay">
+    <div class="scan-modal">
+        <div class="scan-icon-wrap scanning" id="scanIconWrap">
+            <svg id="scanIconSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7z"/>
+            </svg>
+        </div>
+        <div class="scan-title scanning" id="scanTitle">Scanning File Integrity</div>
+        <div class="scan-sub" id="scanSub">
+            Recalculating SHA-256 hash and comparing against stored signature<br>
+            <div class="scan-dots" id="scanDots" style="margin-top:8px;">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="scan-progress-track">
+            <div class="scan-progress-fill" id="scanFill"></div>
+        </div>
+        <button class="scan-close-btn" id="scanCloseBtn" onclick="closeScan()">Close</button>
     </div>
-
 </div>
 
 <script>
+    const API = 'http://localhost:8080';
+    const token = () => localStorage.getItem('token');
+    function authHeaders() { return { 'Authorization': 'Bearer ' + token() }; }
+    function logout() { localStorage.clear(); window.location.href = 'login.html'; }
 
-    let currentFile = null;
+    let allFiles = [];
+    let selectedFile = null;
+    let activeFilter = 'all';
 
-    function getToken() {
-        return localStorage.getItem("token");
+    const user = localStorage.getItem('username') || 'User';
+    document.getElementById('sidebarUser').textContent = user;
+    document.getElementById('sidebarAvatar').textContent = user[0].toUpperCase();
+
+    function formatBytes(bytes) {
+      if (!bytes) return '—';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1048576).toFixed(2) + ' MB';
     }
 
-    /* LOAD FILES */
+    function fmtDate(d) {
+      if (!d) return '—';
+      return new Date(d).toLocaleString();
+    }
+
+    function getExtStyle(name) {
+      const ext = (name || '').split('.').pop().toLowerCase();
+      const map = {
+        pdf:  ['#EF4444','rgba(239,68,68,0.12)'],
+        doc:  ['#3B82F6','rgba(59,130,246,0.12)'],
+        docx: ['#3B82F6','rgba(59,130,246,0.12)'],
+        xls:  ['#22C55E','rgba(34,197,94,0.12)'],
+        xlsx: ['#22C55E','rgba(34,197,94,0.12)'],
+        png:  ['#A855F7','rgba(168,85,247,0.12)'],
+        jpg:  ['#A855F7','rgba(168,85,247,0.12)'],
+        jpeg: ['#A855F7','rgba(168,85,247,0.12)'],
+        zip:  ['#FACC15','rgba(250,204,21,0.12)'],
+        txt:  ['#94A3B8','rgba(148,163,184,0.12)'],
+        mp4:  ['#EC4899','rgba(236,72,153,0.12)'],
+        mp3:  ['#8B5CF6','rgba(139,92,246,0.12)'],
+      };
+      return { ext: ext.toUpperCase().slice(0,4) || 'FILE', colors: map[ext] || ['#94A3B8','rgba(148,163,184,0.12)'] };
+    }
+
+    function statusBadge(status) {
+      if (status === 'SAFE')     return '<span class="badge safe">● SAFE</span>';
+      if (status === 'TAMPERED') return '<span class="badge tampered">⚠ TAMPERED</span>';
+      return '<span class="badge pending">○ UNVERIFIED</span>';
+    }
+
     async function loadFiles() {
+      try {
+        const res = await fetch(`${API}/files`, { headers: authHeaders() });
+        if (!res.ok) { window.location.href = 'login.html'; return; }
+        allFiles = await res.json();
+        document.getElementById('fileCount').textContent = allFiles.length + ' file' + (allFiles.length === 1 ? '' : 's');
+        renderFileList(allFiles);
 
-        const res = await fetch("http://localhost:8080/files", {
-            headers: {
-                "Authorization": "Bearer " + getToken()
-            }
-        });
-
-        const data = await res.json();
-
-        const list = document.getElementById("fileList");
-        list.innerHTML = "";
-
-        data.forEach(file => {
-
-            const div = document.createElement("div");
-            div.className = "file-item";
-
-            div.innerHTML = `
-                <div>
-                    <b>${file.fileName}</b>
-                    <div class="meta">${file.fileType}</div>
-                </div>
-                <button onclick='showDetails(${JSON.stringify(file)})'>Details</button>
-            `;
-
-            list.appendChild(div);
-        });
+        // Check for URL search param
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('search')) {
+          document.getElementById('fileSearch').value = params.get('search');
+          filterFiles();
+        }
+      } catch (err) { console.error(err); }
     }
 
-    /* SHOW DETAILS */
-    function showDetails(file) {
-
-        currentFile = file;
-
-        document.getElementById("details").innerHTML = `
-            <h4>${file.fileName}</h4>
-
-            <div class="meta">Type: ${file.fileType}</div>
-            <div class="meta">Uploaded By: ${file.uploadedBy || "N/A"}</div>
-            <div class="meta">Upload Time: ${file.uploadedAt || "N/A"}</div>
-            <div class="meta">Status: <b class="${file.status === 'TAMPERED' ? 'tampered' : 'safe'}">
-                ${file.status || "UNKNOWN"}
-            </b></div>
-
-           
-            <br>
-
-            <button onclick="previewFile()">Preview</button>
-            <button onclick="downloadFile()">Download</button>
-            <button onclick="verifyFile()">Verify</button>
-
-            <div id="result"></div>
+    function renderFileList(files) {
+      const el = document.getElementById('fileList');
+      if (!files.length) {
+        el.innerHTML = `<div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <h4>No files found</h4><p>Try a different search or filter.</p>
+        </div>`;
+        return;
+      }
+      el.innerHTML = '';
+      files.forEach(f => {
+        const { ext, colors } = getExtStyle(f.fileName);
+        const [color, bg] = colors;
+        const div = document.createElement('div');
+        div.className = 'file-item' + (selectedFile?.id === f.id ? ' selected' : '');
+        div.innerHTML = `
+          <div class="file-item-icon" style="background:${bg};color:${color};border:1px solid ${color}30;">${ext}</div>
+          <div class="file-item-meta">
+            <div class="file-item-name">${f.fileName}</div>
+            <div class="file-item-sub">
+              ${f.uploadedAt ? new Date(f.uploadedAt).toLocaleDateString() : '—'}
+              &nbsp;·&nbsp;
+              ${statusBadge(f.status)}
+            </div>
+          </div>
         `;
+        div.onclick = () => selectFile(f);
+        el.appendChild(div);
+      });
     }
 
-    /* PREVIEW */
-    async function previewFile() {
+    function setFilter(filter, btn) {
+      activeFilter = filter;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      filterFiles();
+    }
 
-    if (!currentFile) return;
+    function filterFiles() {
+      const q = document.getElementById('fileSearch').value.toLowerCase();
+      let filtered = allFiles.filter(f => {
+        const matchQ = !q || f.fileName.toLowerCase().includes(q);
+        const matchF = activeFilter === 'all' || f.status === activeFilter || (activeFilter === 'UNKNOWN' && !f.status);
+        return matchQ && matchF;
+      });
+      renderFileList(filtered);
+    }
+
+    async function selectFile(file) {
+      selectedFile = file;
+
+      // Highlight in list
+      document.querySelectorAll('.file-item').forEach(el => el.classList.remove('selected'));
+      event?.currentTarget?.classList.add('selected');
+
+      // Fetch full details
+      try {
+        const res = await fetch(`${API}/files/details/${file.id}`, { headers: authHeaders() });
+        if (res.ok) selectedFile = await res.json();
+      } catch {}
+
+      // Show inspector
+      document.getElementById('inspectorEmpty').style.display = 'none';
+      const content = document.getElementById('inspectorContent');
+      content.classList.add('visible');
+
+      const f = selectedFile;
+      const { ext, colors } = getExtStyle(f.fileName);
+      const [color, bg] = colors;
+
+      const iconEl = document.getElementById('inspFileIcon');
+      iconEl.textContent = ext;
+      iconEl.style.background = bg;
+      iconEl.style.color = color;
+      iconEl.style.border = `1px solid ${color}40`;
+
+      document.getElementById('inspFileName').textContent = f.fileName || '—';
+      document.getElementById('inspStatus').innerHTML = statusBadge(f.status);
+      document.getElementById('inspSize').lastChild.textContent = ' ' + formatBytes(f.fileSize);
+      document.getElementById('inspDate').lastChild.textContent = ' ' + (f.uploadedAt ? new Date(f.uploadedAt).toLocaleDateString() : '—');
+
+      document.getElementById('dFileId').textContent     = f.id || '—';
+      document.getElementById('dFileName').textContent   = f.fileName || '—';
+      document.getElementById('dFileType').textContent   = f.fileType || '—';
+      document.getElementById('dUploadedBy').textContent = f.uploadedBy || '—';
+      document.getElementById('dUploadDate').textContent = fmtDate(f.uploadedAt);
+      document.getElementById('dStatus').innerHTML       = statusBadge(f.status) || '—';
+      document.getElementById('dHash').textContent       = f.hash || '—';
+    }
+
+    function copyHash() {
+      const h = document.getElementById('dHash').textContent;
+      navigator.clipboard.writeText(h).then(() => {
+        const btn = document.querySelector('.hash-copy-btn');
+        btn.style.background = 'rgba(34,197,94,0.15)';
+        setTimeout(() => btn.style.background = '', 1000);
+      });
+    }
+
+   async function previewFile() {
+
+    if (!selectedFile) return;
 
     const res = await fetch(
-        "http://localhost:8080/files/download/" + currentFile.id,
+        `${API}/files/preview/${selectedFile.id}`,
         {
-            headers: {
-                "Authorization": "Bearer " + getToken()
-            }
+            headers: authHeaders()
         }
     );
 
     if (!res.ok) {
-        alert("Preview failed (401/403)");
+        alert("Preview failed (" + res.status + ")");
         return;
     }
 
     const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
 
-    const type = (currentFile.fileType || "").toLowerCase();
-    const name = (currentFile.fileName || "").toLowerCase();
-
-    // =========================
-    // IMAGE PREVIEW
-    // =========================
-    // IMAGE PREVIEW (OPEN IN BROWSER TAB)
-if (type.includes("image") ||
-    name.endsWith(".png") ||
-    name.endsWith(".jpg") ||
-    name.endsWith(".jpeg") ||
-    name.endsWith(".gif")) {
-
-    const win = window.open("");
-
-    const img = new Image();
-
-    img.src = url;
-    img.style.maxWidth = "100%";
-    img.style.height = "auto";
-    img.style.display = "block";
-    img.style.margin = "0 auto";
-    img.style.background = "#0f172a";
-
-    win.document.body.style.margin = "0";
-    win.document.body.style.background = "#0f172a";
-    win.document.body.appendChild(img);
-
-    return;
-}
-
-    // =========================
-    // PDF PREVIEW
-    // =========================
-    if (
-        type.includes("pdf") ||
-        name.endsWith(".pdf")
-    ) {
-        window.open(url, "_blank");
-        return;
-    }
-
-    // =========================
-    // TEXT PREVIEW (IMPORTANT FIX)
-    // =========================
-    if (
-        type.includes("text") ||
-        name.endsWith(".txt") ||
-        name.endsWith(".json") ||
-        name.endsWith(".log")
-    ) {
-
-        const text = await blob.text();   // ✅ FIX HERE (NOT res.text)
-
-        const win = window.open("");
-        win.document.write(`
-            <html>
-            <body style="margin:0;background:#0f172a;color:#e2e8f0;padding:20px;font-family:monospace;">
-                <pre style="white-space:pre-wrap;">${text}</pre>
-            </body>
-            </html>
-        `);
-
-        return;
-    }
-
-    // =========================
-    // FALLBACK
-    // =========================
     window.open(url, "_blank");
 }
 
-    /* DOWNLOAD (FIXED FOR SECURITY) */
-    async function downloadFile() {
-
-    if (!currentFile) return;
-
-    const res = await fetch(
-        "http://localhost:8080/files/download/" + currentFile.id,
-        {
-            headers: {
-                "Authorization": "Bearer " + getToken()
-            }
-        }
-    );
-
-    if (!res.ok) {
-        alert("Download failed (401/403)");
-        return;
+    function downloadFile() {
+      if (!selectedFile) return;
+      const a = document.createElement('a');
+      a.href = `${API}/files/download/${selectedFile.id}`;
+      a.setAttribute('download', selectedFile.fileName);
+      fetch(a.href, { headers: authHeaders() })
+        .then(r => r.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = selectedFile.fileName;
+          link.click();
+          URL.revokeObjectURL(url);
+        });
     }
 
-    const blob = await res.blob();
+    async function verifyFile() {
+      if (!selectedFile) return;
 
-    const url = window.URL.createObjectURL(blob);
+      const overlay  = document.getElementById('scanOverlay');
+      const iconWrap = document.getElementById('scanIconWrap');
+      const iconSvg  = document.getElementById('scanIconSvg');
+      const title    = document.getElementById('scanTitle');
+      const sub      = document.getElementById('scanSub');
+      const fill     = document.getElementById('scanFill');
+      const closeBtn = document.getElementById('scanCloseBtn');
+      const dots     = document.getElementById('scanDots');
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = currentFile.fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+      // Reset
+      iconWrap.className = 'scan-icon-wrap scanning';
+      iconSvg.innerHTML  = '<path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7z"/>';
+      iconSvg.setAttribute('stroke','currentColor');
+      title.className    = 'scan-title scanning';
+      title.textContent  = 'Scanning File Integrity';
+      sub.innerHTML      = `Recalculating SHA-256 hash and comparing against stored signature<br><div class="scan-dots" id="scanDots" style="margin-top:8px;"><span></span><span></span><span></span></div>`;
+      fill.className     = 'scan-progress-fill';
+      fill.style.width   = '0%';
+      closeBtn.style.display = 'none';
+      overlay.classList.add('open');
 
-    window.URL.revokeObjectURL(url);
-}
+      // Animate progress
+      let p = 0;
+      const tick = setInterval(() => {
+        p = Math.min(p + Math.random() * 12, 88);
+        fill.style.width = p + '%';
+      }, 180);
 
-    /* VERIFY WITH ANIMATION */
-   async function verifyFile() {
+      try {
+        await new Promise(r => setTimeout(r, 1800));
+        const res = await fetch(`${API}/files/verify/${selectedFile.id}`, {
+    headers: authHeaders()
+});
 
-    const box = document.getElementById("result");
+const text = await res.text();
 
-    // STEP 1: start scan UI
-    box.innerHTML = `
-        <div class="pro-scan">
-            <div class="scan-text">
-                <div class="dot-flash">
-                    <span></span><span></span><span></span>
-                </div>
-                Running integrity scan...
-            </div>
-        </div>
-    `;
+const isSafe =
+    text.toLowerCase().includes("safe") &&
+    !text.toLowerCase().includes("tampered");
 
-    // STEP 2: fake processing delay (feels real)
-    setTimeout(async () => {
+        if (isSafe) {
+          iconWrap.className = 'scan-icon-wrap safe';
+          iconSvg.innerHTML  = '<polyline points="20 6 9 17 4 12"/>';
+          title.className    = 'scan-title safe';
+          title.textContent  = 'File Integrity Verified';
+          sub.innerHTML      = `<strong style="color:var(--success)">${selectedFile.fileName}</strong><br>SHA-256 hash matches the original signature. This file has not been tampered with.`;
+          fill.className     = 'scan-progress-fill safe';
+        } else {
+          iconWrap.className = 'scan-icon-wrap tampered';
+          iconSvg.innerHTML  = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>';
+          title.className    = 'scan-title tampered';
+          title.textContent  = 'Tampering Detected';
+          sub.innerHTML      = `<strong style="color:var(--danger)">${selectedFile.fileName}</strong><br>SHA-256 hash does NOT match the original signature. This file has been modified.`;
+          fill.className     = 'scan-progress-fill tampered';
+        }
 
-        const res = await fetch(
-            "http://localhost:8080/files/verify/" + currentFile.id,
-            {
-                headers: {
-                    "Authorization": "Bearer " + getToken()
-                }
-            }
-        );
+        // Update status in list
+        selectedFile.status = isSafe ? 'SAFE' : 'TAMPERED';
+        const idx = allFiles.findIndex(f => f.id === selectedFile.id);
+        if (idx !== -1) allFiles[idx].status = selectedFile.status;
+        filterFiles();
+        document.getElementById('dStatus').innerHTML = statusBadge(selectedFile.status);
+        document.getElementById('inspStatus').innerHTML = statusBadge(selectedFile.status);
 
-        const text = await res.text();
+      } catch (err) {
+        clearInterval(tick);
+        title.textContent = 'Verification Error';
+        sub.textContent   = err.message;
+      }
 
-        const isTampered = text.toLowerCase().includes("tampered");
+      closeBtn.style.display = 'block';
+    }
 
-        // STEP 3: final result UI
-        box.innerHTML = `
-            <div class="pro-scan">
+    function closeScan() {
+      document.getElementById('scanOverlay').classList.remove('open');
+    }
 
-                <div class="scan-text">
-                    ${isTampered
-                        ? "<span class='scan-fail'>⚠ File Integrity Failed</span>"
-                        : "<span class='scan-success'>✔ File Verified Secure</span>"
-                    }
-                </div>
-
-                <div style="margin-top:10px;font-size:13px;color:#94a3b8;">
-                    ${text}
-                </div>
-
-            </div>
-        `;
-
-    }, 1300);
-}
-
+    if (!token()) { window.location.href = 'login.html'; }
+    else loadFiles();
 </script>
-
 </body>
 </html>
