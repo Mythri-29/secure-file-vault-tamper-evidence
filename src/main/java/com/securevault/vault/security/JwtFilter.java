@@ -32,7 +32,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // allow auth endpoints
         if (path.startsWith("/api/auth")) {
             filterChain.doFilter(request, response);
             return;
@@ -63,11 +62,13 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
+        String roleName = "ROLE_" + user.getRole();
+
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
                         username,
                         null,
-                        List.of(new SimpleGrantedAuthority(user.getRole()))
+                        List.of(new SimpleGrantedAuthority(roleName))
                 );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);

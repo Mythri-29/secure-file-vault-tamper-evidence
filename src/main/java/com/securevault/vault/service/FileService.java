@@ -30,7 +30,7 @@ public class FileService {
         String dirPath = System.getProperty("user.dir") + "/uploads/";
 
         File dir = new File(dirPath);
-        if(!dir.exists()) dir.mkdirs();
+        if (!dir.exists()) dir.mkdirs();
 
         String filePath = dirPath + file.getOriginalFilename();
 
@@ -43,7 +43,7 @@ public class FileService {
         byte[] hash = md.digest(bytes);
 
         StringBuilder sb = new StringBuilder();
-        for(byte b : hash){
+        for (byte b : hash) {
             sb.append(String.format("%02x", b));
         }
 
@@ -52,7 +52,6 @@ public class FileService {
         f.setFileType(file.getContentType());
         f.setFilePath(filePath);
         f.setFileHash(sb.toString());
-
         f.setUploadedBy(uploadedBy);
         f.setUploadTime(LocalDateTime.now());
         f.setStatus("SAFE");
@@ -61,7 +60,9 @@ public class FileService {
 
         auditLogRepository.save(new AuditLog(
                 f.getId(),
+                f.getFileName(),
                 "UPLOAD",
+                uploadedBy,
                 LocalDateTime.now()
         ));
 

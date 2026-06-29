@@ -1,5 +1,4 @@
 package com.securevault.vault.controller;
-
 import com.securevault.vault.entity.User;
 import com.securevault.vault.repository.UserRepository;
 import com.securevault.vault.security.JwtUtil;
@@ -51,6 +50,8 @@ public class AuthController {
             return "Invalid password";
         }
 
-        return JwtUtil.generateToken(dbUser.getUsername());
+        return JwtUtil.generateToken(dbUser.getUsername(), dbUser.getRole());
     }
 }
+
+

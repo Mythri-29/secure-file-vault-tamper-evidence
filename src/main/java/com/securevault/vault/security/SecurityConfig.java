@@ -24,48 +24,46 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-                // disable default security features
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> {})
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-
-                // stateless session (JWT based)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
-                // API rules
                 .authorizeHttpRequests(auth -> auth
+                        // public
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/files/audit/**").hasAuthority("ADMIN")
-                        .requestMatchers("/files/**").hasAnyAuthority("USER", "ADMIN")
+
+                        // admin-only APIs
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // audit logs: both roles allowed; ownership filtering
+                        // (own logs vs all logs) is enforced inside
+                        // FileController itself.
+                        .requestMatchers("/files/audit", "/files/audit/**").hasAnyRole("USER", "ADMIN")
+
+                        // general file endpoints — open to both roles;
+                        // per-file ownership checks happen inside the controller
+                        .requestMatchers("/files/**").hasAnyRole("USER", "ADMIN")
+
                         .anyRequest().authenticated()
                 )
-
-                // JWT filter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // 🔥 CORS FIX
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-
         CorsConfiguration config = new CorsConfiguration();
-
         config.addAllowedOrigin("http://localhost:63342");
         config.addAllowedMethod("*");
         config.addAllowedHeader("*");
-
         config.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
-
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-
         return source;
     }
 }
