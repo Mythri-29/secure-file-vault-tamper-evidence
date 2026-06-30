@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Upload File - Secure Vault</title>
+
+    <style>
+
+        body{
+            margin:0;
+            font-family:Arial,sans-serif;
+            background:#0f172a;
+            color:white;
+        }
+
+        .navbar{
+            background:#1e293b;
+            padding:18px;
+            text-align:center;
+            font-size:22px;
+            font-weight:bold;
+        }
+
+        .container{
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:85vh;
+        }
+
+        .card{
+            width:500px;
+            background:#1e293b;
+            padding:35px;
+            border-radius:15px;
+            box-shadow:0 0 20px rgba(0,0,0,0.3);
+        }
+
+        h2{
+            text-align:center;
+            margin-bottom:25px;
+        }
+
+        input[type=file]{
+            width:100%;
+            padding:12px;
+            background:#0f172a;
+            color:white;
+            border:1px solid #334155;
+            border-radius:10px;
+        }
+
+        .filename{
+            margin-top:12px;
+            color:#94a3b8;
+            font-size:14px;
+        }
+
+        .btn-group{
+            display:flex;
+            gap:10px;
+            margin-top:25px;
+        }
+
+        button{
+            flex:1;
+            padding:12px;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+            color:white;
+            font-weight:bold;
+        }
+
+        .back{
+            background:#475569;
+        }
+
+        .upload{
+            background:#2563eb;
+        }
+
+        button:hover{
+            opacity:0.9;
+        }
+
+        #result{
+            margin-top:20px;
+            text-align:center;
+            font-weight:bold;
+        }
+
+        .success{
+            color:#22c55e;
+        }
+
+        .error{
+            color:#ef4444;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">
+    📤 Secure Vault - Upload File
+</div>
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>Select File</h2>
+
+        <input type="file" id="fileInput" onchange="showFileName()">
+
+        <div id="filename" class="filename">
+            No file selected
+        </div>
+
+        <div class="btn-group">
+            <button class="back" onclick="goBack()">Back</button>
+            <button class="upload" onclick="uploadFile()">Upload</button>
+        </div>
+
+        <div id="result"></div>
+
+    </div>
+
+</div>
+
+<script>
+
+    function getToken(){
+        return localStorage.getItem("token");
+    }
+
+    function goBack(){
+        window.location.href="dashboard.html";
+    }
+
+    function showFileName(){
+
+        const file=document.getElementById("fileInput").files[0];
+
+        document.getElementById("filename").innerText=
+            file ? file.name : "No file selected";
+    }
+
+    async function uploadFile(){
+
+        const file=document.getElementById("fileInput").files[0];
+
+        if(!file){
+            alert("Select a file");
+            return;
+        }
+
+        const formData=new FormData();
+
+        formData.append("file",file);
+
+        formData.append("uploadedBy","DemoUser");
+
+        try{
+
+            const response=await fetch(
+                "http://localhost:8080/files/upload",
+                {
+                    method:"POST",
+                    headers:{
+                        "Authorization":"Bearer "+getToken()
+                    },
+                    body:formData
+                }
+            );
+
+            const result=await response.text();
+
+            document.getElementById("result").innerHTML=
+                `<span class="success">${result}</span>`;
+
+        }catch(e){
+
+            document.getElementById("result").innerHTML=
+                `<span class="error">Upload Failed</span>`;
+        }
+    }
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Secure Vault Dashboard</title>
+
+    <style>
+
+        body{
+            margin:0;
+            font-family:Arial;
+            background:#0f172a;
+            color:#e2e8f0;
+        }
+
+        /* NAVBAR */
+        .navbar{
+            background:#1e293b;
+            padding:18px;
+            text-align:center;
+            font-size:20px;
+            font-weight:600;
+        }
+
+        /* CENTER WRAPPER */
+        .wrapper{
+            height:calc(100vh - 70px);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+
+        /* GRID (4 CARDS ONLY CENTERED) */
+        .grid{
+            display:grid;
+            grid-template-columns:repeat(2, 220px);
+            grid-gap:20px;
+        }
+
+        /* CARD */
+        .card{
+            background:#1e293b;
+            height:140px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:14px;
+            cursor:pointer;
+            font-size:18px;
+            font-weight:600;
+            transition:0.25s ease;
+            border:1px solid #1f2937;
+        }
+
+        /* HOVER EFFECT */
+        .card:hover{
+            background:#334155;
+            transform:translateY(-4px);
+            border-color:#3b82f6;
+            box-shadow:0 0 18px rgba(59,130,246,0.25);
+        }
+
+        /* ACTIVE PRESS */
+        .card:active{
+            transform:scale(0.97);
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">🔐 Secure Vault Dashboard</div>
+
+<div class="wrapper">
+
+    <div class="grid">
+
+        <div class="card" onclick="go('upload.html')">
+            📤 Upload
+        </div>
+
+        <div class="card" onclick="go('files.html')">
+            📁 Files
+        </div>
+
+        <div class="card" onclick="go('audit.html')">
+            📊 Audit Logs
+        </div>
+
+        <div class="card" onclick="go('profile.html')">
+            👤 Profile
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    function go(page){
+        window.location.href = page;
+    }
+
+</script>
+
+</body>
+</html>

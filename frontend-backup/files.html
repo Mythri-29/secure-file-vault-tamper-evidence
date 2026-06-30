@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>My Files - Secure Vault</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .navbar {
+            background: #1e293b;
+            padding: 18px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .container {
+            display: flex;
+            gap: 18px;
+            padding: 18px;
+            height: calc(100vh - 70px);
+        }
+
+        .left, .right {
+            width: 50%;
+            background: #1e293b;
+            padding: 18px;
+            border-radius: 14px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            background: #0f172a;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            border: 1px solid #1f2937;
+        }
+
+        button {
+            padding: 8px 12px;
+            background: #2563eb;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        .meta {
+            font-size: 14px;
+            color: #94a3b8;
+            margin: 4px 0;
+        }
+
+        .safe { color: #22c55e; }
+        .tampered { color: #ef4444; }
+
+        /* scan animation */
+        .scan-box {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #1f2937;
+            border-radius: 10px;
+        }
+
+        .bar {
+            height: 5px;
+            background: #1f2937;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .bar::after {
+            content: "";
+            width: 40%;
+            height: 100%;
+            background: #3b82f6;
+            position: absolute;
+            animation: scan 1s infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(250%); }
+        }
+        .mini-scan {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin-top: 10px;
+    border-radius: 8px;
+    background: #0f172a;
+    border: 1px solid #1f2937;
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
+/* tiny moving dot */
+.scan-dot {
+    width: 6px;
+    height: 6px;
+    background: #3b82f6;
+    border-radius: 50%;
+    animation: pulseMove 0.9s infinite ease-in-out;
+}
+
+@keyframes pulseMove {
+    0% { transform: translateX(0); opacity: 0.4; }
+    50% { transform: translateX(10px); opacity: 1; }
+    100% { transform: translateX(0); opacity: 0.4; }
+}
+        .pro-scan {
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #0f172a, #111827);
+    border: 1px solid #1f2937;
+    overflow: hidden;
+    position: relative;
+}
+
+/* top glow line */
+.pro-scan::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -40%;
+    width: 40%;
+    height: 2px;
+    background: #3b82f6;
+    animation: sweep 1.2s infinite;
+    box-shadow: 0 0 10px #3b82f6;
+}
+
+@keyframes sweep {
+    0% { left: -40%; }
+    100% { left: 120%; }
+}
+
+/* scanning text */
+.scan-text {
+    font-size: 14px;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* animated dots */
+.dot-flash {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.dot-flash span {
+    width: 5px;
+    height: 5px;
+    background: #3b82f6;
+    border-radius: 50%;
+    animation: bounce 1s infinite ease-in-out;
+}
+
+.dot-flash span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.dot-flash span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* result styles */
+.scan-success {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.scan-fail {
+    color: #ef4444;
+    font-weight: 600;
+}
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">📁 Secure File Vault</div>
+
+<div class="container">
+
+    <!-- LEFT -->
+    <div class="left">
+        <h3>Files</h3>
+        <button onclick="loadFiles()">Load Files</button>
+        <div id="fileList"></div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+        <h3>File Details</h3>
+        <div id="details">Select a file</div>
+    </div>
+
+</div>
+
+<script>
+
+    let currentFile = null;
+
+    function getToken() {
+        return localStorage.getItem("token");
+    }
+
+    /* LOAD FILES */
+    async function loadFiles() {
+
+        const res = await fetch("http://localhost:8080/files", {
+            headers: {
+                "Authorization": "Bearer " + getToken()
+            }
+        });
+
+        const data = await res.json();
+
+        const list = document.getElementById("fileList");
+        list.innerHTML = "";
+
+        data.forEach(file => {
+
+            const div = document.createElement("div");
+            div.className = "file-item";
+
+            div.innerHTML = `
+                <div>
+                    <b>${file.fileName}</b>
+                    <div class="meta">${file.fileType}</div>
+                </div>
+                <button onclick='showDetails(${JSON.stringify(file)})'>Details</button>
+            `;
+
+            list.appendChild(div);
+        });
+    }
+
+    /* SHOW DETAILS */
+    function showDetails(file) {
+
+        currentFile = file;
+
+        document.getElementById("details").innerHTML = `
+            <h4>${file.fileName}</h4>
+
+            <div class="meta">Type: ${file.fileType}</div>
+            <div class="meta">Uploaded By: ${file.uploadedBy || "N/A"}</div>
+            <div class="meta">Upload Time: ${file.uploadedAt || "N/A"}</div>
+            <div class="meta">Status: <b class="${file.status === 'TAMPERED' ? 'tampered' : 'safe'}">
+                ${file.status || "UNKNOWN"}
+            </b></div>
+
+
+            <br>
+
+            <button onclick="previewFile()">Preview</button>
+            <button onclick="downloadFile()">Download</button>
+            <button onclick="verifyFile()">Verify</button>
+
+            <div id="result"></div>
+        `;
+    }
+
+    /* PREVIEW */
+    async function previewFile() {
+
+    if (!currentFile) return;
+
+    const res = await fetch(
+        "http://localhost:8080/files/download/" + currentFile.id,
+        {
+            headers: {
+                "Authorization": "Bearer " + getToken()
+            }
+        }
+    );
+
+    if (!res.ok) {
+        alert("Preview failed (401/403)");
+        return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const type = (currentFile.fileType || "").toLowerCase();
+    const name = (currentFile.fileName || "").toLowerCase();
+
+    // =========================
+    // IMAGE PREVIEW
+    // =========================
+    // IMAGE PREVIEW (OPEN IN BROWSER TAB)
+if (type.includes("image") ||
+    name.endsWith(".png") ||
+    name.endsWith(".jpg") ||
+    name.endsWith(".jpeg") ||
+    name.endsWith(".gif")) {
+
+    const win = window.open("");
+
+    const img = new Image();
+
+    img.src = url;
+    img.style.maxWidth = "100%";
+    img.style.height = "auto";
+    img.style.display = "block";
+    img.style.margin = "0 auto";
+    img.style.background = "#0f172a";
+
+    win.document.body.style.margin = "0";
+    win.document.body.style.background = "#0f172a";
+    win.document.body.appendChild(img);
+
+    return;
+}
+
+    // =========================
+    // PDF PREVIEW
+    // =========================
+    if (
+        type.includes("pdf") ||
+        name.endsWith(".pdf")
+    ) {
+        window.open(url, "_blank");
+        return;
+    }
+
+    // =========================
+    // TEXT PREVIEW (IMPORTANT FIX)
+    // =========================
+    if (
+        type.includes("text") ||
+        name.endsWith(".txt") ||
+        name.endsWith(".json") ||
+        name.endsWith(".log")
+    ) {
+
+        const text = await blob.text();   // ✅ FIX HERE (NOT res.text)
+
+        const win = window.open("");
+        win.document.write(`
+            <html>
+            <body style="margin:0;background:#0f172a;color:#e2e8f0;padding:20px;font-family:monospace;">
+                <pre style="white-space:pre-wrap;">${text}</pre>
+            </body>
+            </html>
+        `);
+
+        return;
+    }
+
+    // =========================
+    // FALLBACK
+    // =========================
+    window.open(url, "_blank");
+}
+
+    /* DOWNLOAD (FIXED FOR SECURITY) */
+    async function downloadFile() {
+
+    if (!currentFile) return;
+
+    const res = await fetch(
+        "http://localhost:8080/files/download/" + currentFile.id,
+        {
+            headers: {
+                "Authorization": "Bearer " + getToken()
+            }
+        }
+    );
+
+    if (!res.ok) {
+        alert("Download failed (401/403)");
+        return;
+    }
+
+    const blob = await res.blob();
+
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = currentFile.fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    window.URL.revokeObjectURL(url);
+}
+
+    /* VERIFY WITH ANIMATION */
+   async function verifyFile() {
+
+    const box = document.getElementById("result");
+
+    // STEP 1: start scan UI
+    box.innerHTML = `
+        <div class="pro-scan">
+            <div class="scan-text">
+                <div class="dot-flash">
+                    <span></span><span></span><span></span>
+                </div>
+                Running integrity scan...
+            </div>
+        </div>
+    `;
+
+    // STEP 2: fake processing delay (feels real)
+    setTimeout(async () => {
+
+        const res = await fetch(
+            "http://localhost:8080/files/verify/" + currentFile.id,
+            {
+                headers: {
+                    "Authorization": "Bearer " + getToken()
+                }
+            }
+        );
+
+        const text = await res.text();
+
+        const isTampered = text.toLowerCase().includes("tampered");
+
+        // STEP 3: final result UI
+        box.innerHTML = `
+            <div class="pro-scan">
+
+                <div class="scan-text">
+                    ${isTampered
+                        ? "<span class='scan-fail'>⚠ File Integrity Failed</span>"
+                        : "<span class='scan-success'>✔ File Verified Secure</span>"
+                    }
+                </div>
+
+                <div style="margin-top:10px;font-size:13px;color:#94a3b8;">
+                    ${text}
+                </div>
+
+            </div>
+        `;
+
+    }, 1300);
+}
+
+</script>
+
+</body>
+</html>

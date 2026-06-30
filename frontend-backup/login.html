@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Secure Vault Login</title>
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial, sans-serif;
+        }
+
+        body{
+            height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:radial-gradient(circle at top,#1e293b,#0f172a);
+            color:white;
+        }
+
+        /* MAIN CARD */
+        .login-box{
+            width:380px;
+            padding:35px;
+            background:rgba(30,41,59,0.85);
+            backdrop-filter:blur(12px);
+            border-radius:16px;
+            box-shadow:0 0 40px rgba(0,0,0,0.5);
+            text-align:center;
+            animation:fadeIn 0.6s ease;
+        }
+
+        /* TITLE */
+        .login-box h2{
+            margin-bottom:5px;
+        }
+
+        .login-box p{
+            font-size:13px;
+            color:#94a3b8;
+            margin-bottom:25px;
+        }
+
+        /* INPUTS */
+        input{
+            width:100%;
+            padding:12px;
+            margin:10px 0;
+            border-radius:10px;
+            border:1px solid #334155;
+            background:#0f172a;
+            color:white;
+            outline:none;
+        }
+
+        input:focus{
+            border-color:#3b82f6;
+            box-shadow:0 0 10px rgba(59,130,246,0.3);
+        }
+
+        /* BUTTON */
+        button{
+            width:100%;
+            padding:12px;
+            margin-top:15px;
+            border:none;
+            border-radius:10px;
+            background:linear-gradient(135deg,#2563eb,#3b82f6);
+            color:white;
+            font-weight:bold;
+            cursor:pointer;
+            transition:0.2s;
+        }
+
+        button:hover{
+            transform:translateY(-2px);
+            box-shadow:0 8px 20px rgba(59,130,246,0.3);
+        }
+
+        button:active{
+            transform:scale(0.98);
+        }
+
+        /* SMALL TEXT */
+        .footer{
+            margin-top:15px;
+            font-size:12px;
+            color:#64748b;
+        }
+
+        /* ANIMATION */
+        @keyframes fadeIn{
+            from{opacity:0; transform:translateY(20px);}
+            to{opacity:1; transform:translateY(0);}
+        }
+
+        /* SECURITY ICON */
+        .logo{
+            width:60px;
+            height:60px;
+            margin:auto;
+            margin-bottom:10px;
+            border-radius:50%;
+            background:#2563eb;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:24px;
+            font-weight:bold;
+            box-shadow:0 0 20px rgba(37,99,235,0.4);
+        }
+
+        .error{
+            color:#ef4444;
+            font-size:13px;
+            margin-top:10px;
+        }
+        .success {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.error {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.loading {
+    color: #3b82f6;
+    font-weight: 500;
+}
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="login-box">
+
+    <div class="logo">🔐</div>
+
+    <h2>Secure Vault</h2>
+    <p>Login to access your secure file system</p>
+
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+    <div id="loginMsg" style="
+    margin-top:12px;
+    font-size:14px;
+    text-align:center;
+"></div>
+    <div id="msg" class="error"></div>
+
+    <div class="footer">
+        Protected with SHA-256 Integrity & JWT Security
+    </div>
+
+</div>
+
+
+<script>
+
+    async function login(){
+
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    try{
+
+        const res = await fetch("http://localhost:8080/api/auth/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username, password })
+        });
+
+        if(!res.ok){
+            document.getElementById("msg").innerText = "Invalid credentials";
+            return;
+        }
+
+        // 🔥 IMPORTANT: backend returns STRING, not JSON
+        const token = await res.text();
+
+        localStorage.setItem("token", token);
+
+        window.location.href = "dashboard.html";
+
+    } catch(err){
+        console.log(err);
+        document.getElementById("msg").innerText = "Server error";
+    }
+}
+
+</script>
+
+</body>
+</html>

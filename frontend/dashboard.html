@@ -319,6 +319,17 @@
             Audit Logs
         </a>
 
+        <!-- ADMIN-ONLY: hidden for ROLE_USER via auth.js -->
+        <div class="nav-section-label" data-role="ADMIN" style="display:none;">Administration</div>
+        <a href="admin-dashboard.html" class="nav-item" data-role="ADMIN" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+            Admin Dashboard
+        </a>
+        <a href="admin-users.html" class="nav-item" data-role="ADMIN" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Manage Users
+        </a>
+
         <div class="nav-section-label">Account</div>
 
         <a href="profile.html" class="nav-item">
@@ -331,7 +342,7 @@
                 <div class="user-avatar" id="sidebarAvatar">U</div>
                 <div class="user-info">
                     <div class="user-name" id="sidebarUser">Loading…</div>
-                    <div class="user-role">Vault User</div>
+                    <div class="user-role" id="sidebarRole">Vault User</div>
                 </div>
             </div>
         </div>
@@ -488,18 +499,8 @@
     </div>
 </div>
 
+    <script src="auth.js"></script>
 <script>
-    const API = 'http://localhost:8080';
-    const token = () => localStorage.getItem('token');
-
-    function logout() {
-      localStorage.clear();
-      window.location.href = 'login.html';
-    }
-
-    function authHeaders() {
-      return { 'Authorization': 'Bearer ' + token() };
-    }
 
     function timeAgo(dateStr) {
       const diff = Date.now() - new Date(dateStr).getTime();
@@ -511,12 +512,8 @@
       return `${Math.floor(hrs/24)}d ago`;
     }
 
-    async function loadDashboard() {
+      async function loadDashboard() {
       try {
-        const user = localStorage.getItem('username') || 'User';
-        document.getElementById('sidebarUser').textContent = user;
-        document.getElementById('sidebarAvatar').textContent = user[0].toUpperCase();
-
         const filesRes = await fetch(`${API}/files`, { headers: authHeaders() });
         if (!filesRes.ok) { window.location.href = 'login.html'; return; }
         const files = await filesRes.json();
@@ -599,8 +596,11 @@
       }
     });
 
-    if (!token()) { window.location.href = 'login.html'; }
-    else loadDashboard();
+  const me = initAuth();
+    if (me) loadDashboard();
+
 </script>
+
+
 </body>
 </html>

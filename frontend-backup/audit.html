@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Audit Logs - Secure Vault</title>
+
+    <style>
+
+        body{
+            margin:0;
+            font-family:Arial, sans-serif;
+            background:#0f172a;
+            color:#e2e8f0;
+        }
+
+        .navbar{
+            background:#1e293b;
+            padding:18px;
+            text-align:center;
+            font-size:20px;
+            font-weight:600;
+        }
+
+        .container{
+            padding:20px;
+        }
+
+        .card{
+            background:#1e293b;
+            padding:18px;
+            border-radius:12px;
+            margin-bottom:15px;
+        }
+
+        select,button{
+            width:100%;
+            padding:10px;
+            margin-top:10px;
+            border-radius:8px;
+            border:1px solid #374151;
+            background:#0f172a;
+            color:#e2e8f0;
+        }
+
+        button:hover{
+            background:#1f2937;
+            cursor:pointer;
+        }
+
+        /* LOG BOX */
+        .log-box{
+    height: calc(100vh - 260px); /* key fix */
+    overflow-y: auto;
+    margin-top:10px;
+    padding:10px;
+    border-radius:10px;
+    background:#0f172a;
+    border:1px solid #1f2937;
+}
+        /* LOG ITEM */
+        .log{
+            display:flex;
+            justify-content:space-between;
+            padding:10px;
+            margin-bottom:8px;
+            border-radius:8px;
+            background:#111827;
+        }
+
+        /* DOT */
+        .dot{
+            width:10px;
+            height:10px;
+            border-radius:50%;
+            margin-right:8px;
+        }
+
+        /* TYPES */
+        .upload .dot{background:#3b82f6;}
+        .verify .dot{background:#22c55e;}
+        .download .dot{background:#facc15;}
+        .tamper .dot{background:#ef4444;}
+
+        .left{
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+
+        .time{
+            font-size:12px;
+            color:#94a3b8;
+        }
+
+        .empty{
+            color:#64748b;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">📊 Secure Vault Audit Logs</div>
+
+<div class="container">
+
+    <div class="card">
+        <h3>Select File</h3>
+        <select id="fileSelect"></select>
+        <button onclick="loadAudit()">Load Logs</button>
+    </div>
+
+    <div class="card">
+        <h3>Activity Timeline</h3>
+        <div id="logs" class="log-box empty">
+            Select a file
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+    function getToken(){
+        return localStorage.getItem("token");
+    }
+
+    /* LOAD FILES */
+    async function loadFilesForAudit(){
+
+        const res = await fetch("http://localhost:8080/files",{
+            headers:{
+                "Authorization":"Bearer "+getToken()
+            }
+        });
+
+        const data = await res.json();
+
+        const select = document.getElementById("fileSelect");
+        select.innerHTML="";
+
+        data.forEach(f=>{
+            const opt=document.createElement("option");
+            opt.value=f.id;
+            opt.text=`${f.fileName} (ID: ${f.id})`;
+            select.appendChild(opt);
+        });
+    }
+
+    /* LOAD AUDIT */
+    async function loadAudit(){
+
+        const id=document.getElementById("fileSelect").value;
+
+        const res=await fetch(`http://localhost:8080/files/audit/${id}`,{
+            headers:{
+                "Authorization":"Bearer "+getToken()
+            }
+        });
+
+        const data=await res.json();
+
+        const logs=document.getElementById("logs");
+        logs.classList.remove("empty");
+        logs.innerHTML="";
+
+        data.forEach(l=>{
+
+            let cls="upload";
+
+            if(l.action==="UPLOAD") cls="upload";
+            else if(l.action==="VERIFY") cls="verify";
+            else if(l.action==="DOWNLOAD") cls="download";
+            else if(l.action==="TAMPER") cls="tamper";
+
+            const date=new Date(l.timestamp);
+
+            const div=document.createElement("div");
+            div.className=`log ${cls}`;
+
+            div.innerHTML=`
+                <div class="left">
+                    <span class="dot"></span>
+                    <span>${l.action}</span>
+                </div>
+                <div class="time">
+                    ${date.toLocaleDateString()} | ${date.toLocaleTimeString()}
+                </div>
+            `;
+
+            logs.appendChild(div);
+        });
+
+        if(data.length===0){
+            logs.innerHTML=`<div class="empty">No logs found</div>`;
+        }
+    }
+
+    /* INIT */
+    window.onload=loadFilesForAudit;
+
+</script>
+
+</body>
+</html>
