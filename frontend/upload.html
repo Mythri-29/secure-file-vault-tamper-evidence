@@ -719,9 +719,6 @@
         const formData = new FormData();
 formData.append('file', selectedFile);
 
-// Add this line
-formData.append('uploadedBy', localStorage.getItem('username') || 'admin');
-
         const response = await fetch(`${API}/files/upload`, {
           method: 'POST',
           headers: authHeaders(),
