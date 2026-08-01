@@ -12,4 +12,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Powers GET /api/admin/users?search= (partial, case-insensitive)
     List<User> findByUsernameContainingIgnoreCase(String username);
+    long countByRole(String role);
 }
